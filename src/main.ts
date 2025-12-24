@@ -38,11 +38,17 @@ async function bootstrap() {
 
   // Optionally save the spec to a file (JSON format)
   // Ensure docs directory exists
-  const docsDir = './docs';
-  if (!fs.existsSync(docsDir)) {
-    fs.mkdirSync(docsDir, { recursive: true });
+  try {
+    const docsDir = './docs';
+    if (!fs.existsSync(docsDir)) {
+      fs.mkdirSync(docsDir, { recursive: true });
+    }
+    fs.writeFileSync('./docs/api-spec.json', JSON.stringify(document, null, 2));
+    console.log('API spec saved to ./docs/api-spec.json');
+  } catch (error) {
+    console.error('Failed to save API spec:', error);
+    // Non-critical error, continue bootstrapping
   }
-  fs.writeFileSync('./docs/api-spec.json', JSON.stringify(document, null, 2));
 
   await app.listen(3000);
 }
