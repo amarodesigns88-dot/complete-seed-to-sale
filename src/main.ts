@@ -37,6 +37,11 @@ async function bootstrap() {
   SwaggerModule.setup('api-docs', app, document);
 
   // Optionally save the spec to a file (JSON format)
+  // Ensure docs directory exists
+  const docsDir = './docs';
+  if (!fs.existsSync(docsDir)) {
+    fs.mkdirSync(docsDir, { recursive: true });
+  }
   fs.writeFileSync('./docs/api-spec.json', JSON.stringify(document, null, 2));
 
   await app.listen(3000);

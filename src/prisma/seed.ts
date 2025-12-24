@@ -71,6 +71,16 @@ async function main() {
   // Hash password for test user
   const passwordHash = await bcrypt.hash('TestPassword123!', 10);
 
+  // Create role first to ensure it exists
+  const role = await prisma.role.upsert({
+    where: { name: 'licensee_admin' },
+    update: {},
+    create: { 
+      name: 'licensee_admin',
+      description: 'Licensee Administrator Role',
+    }
+  });
+
   // Create or upsert user by email (keeps email uniqueness)
   const user = await prisma.user.upsert({
     where: { email: 'testuser@example.com' },
@@ -79,6 +89,9 @@ async function main() {
       updatedAt: new Date(),
       parentLocationId: parentLocation.id,
       isActive: true,
+      roles: { 
+        connect: [{ id: role.id }]
+      },
     },
     create: {
       id: userId,
@@ -88,13 +101,7 @@ async function main() {
       parentLocationId: parentLocation.id,
       isActive: true,
       roles: { 
-        connectOrCreate: [{
-          where: { name: 'licensee_admin' },
-          create: { 
-            name: 'licensee_admin',
-            description: 'Licensee Administrator Role',
-          }
-        }]
+        connect: [{ id: role.id }]
       },
     },
   });
