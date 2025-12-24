@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: seed-to-sale-db
+    environment:
+      POSTGRES_USER: seedtosale
+      POSTGRES_PASSWORD: seedtosale123
+      POSTGRES_DB: seed_to_sale
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - seed-to-sale-network
+
+  # Backend API (NestJS)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: seed-to-sale-backend
+    environment:
+      DATABASE_URL: postgresql://seedtosale:seedtosale123@postgres:5432/seed_to_sale?schema=public
+      JWT_SECRET: dev-secret-key-change-in-production
+      JWT_EXPIRATION: 24h
+      NODE_ENV: development
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    networks:
+      - seed-to-sale-network
+    command: sh -c "npx prisma migrate deploy && npm run start:dev"
+
+  # Frontend (React + Vite)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: seed-to-sale-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - seed-to-sale-network
+    environment:
+      VITE_API_URL: http://localhost:3000
+
+volumes:
+  postgres_data:
+
+networks:
+  seed-to-sale-network:
+    driver: bridge
