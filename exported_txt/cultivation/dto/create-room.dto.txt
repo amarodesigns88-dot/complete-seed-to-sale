@@ -1,0 +1,42 @@
+/*
+ * Source: src\cultivation\dto\create-room.dto.ts
+ * Exported: 2025-12-23T23:50:13.516Z
+ */
+
+import { IsString, IsOptional, IsObject } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class CreateRoomDto {
+  @ApiProperty({
+    description: 'Human-friendly room name',
+    example: 'Flower Room A-1',
+  })
+  @IsString()
+  name: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional room type (e.g., "flower", "veg", "mother", "dry")',
+    example: 'flower',
+  })
+  @IsOptional()
+  @IsString()
+  roomType?: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional room status (e.g., "active", "inactive", "quarantine")',
+    example: 'active',
+  })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @ApiPropertyOptional({
+  description: 'Optional JSON metadata bag for room (sensors, notes, capacity, etc.)',
+  example: { capacity: 200, climateController: 'CC-42', notes: 'Near intake' },
+  type: 'object',
+  additionalProperties: true,
+})
+@IsOptional()
+@IsObject()
+metadata?: Record<string, any>;
+}

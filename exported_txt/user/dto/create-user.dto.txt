@@ -1,0 +1,79 @@
+/*
+ * Source: src\user\dto\create-user.dto.ts
+ * Exported: 2025-12-23T23:50:13.542Z
+ */
+
+import { IsEmail, IsString, IsArray, IsOptional, IsUUID, MinLength, IsBoolean } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class CreateUserDto {
+  @ApiProperty({ description: 'Optional UUID for the user (useful for idempotent seeds)', example: '11111111-1111-1111-1111-111111111111', required: false })
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
+  @ApiProperty({ description: 'User email', example: 'user@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiPropertyOptional({ description: 'User full name', example: 'John Doe' })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiProperty({
+    description: 'User password (write-only)',
+    example: 'P@ssw0rd!',
+    minLength: 8,
+    writeOnly: true,
+  })
+  @IsString()
+  @MinLength(8)
+  password: string;
+
+  @ApiPropertyOptional({
+    description: 'Array of role IDs assigned to the user (UUIDs).',
+    example: ['11111111-1111-1111-1111-111111111111'],
+    isArray: true,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  roleIds?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Array of location IDs the user is associated with',
+    example: ['33333333-3333-3333-3333-333333333333'],
+    isArray: true,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  locationIds?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Optional parent location id (UUID)',
+    example: '44444444-4444-4444-4444-444444444444',
+  })
+  @IsOptional()
+  @IsUUID()
+  parentLocationId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional account status (e.g., "active", "inactive")',
+    example: 'active',
+  })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional boolean toggling active state',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}

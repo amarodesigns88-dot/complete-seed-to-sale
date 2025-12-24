@@ -1,0 +1,10 @@
+/*
+ * Source: src\user\role.enum.ts
+ * Exported: 2025-12-23T23:50:13.553Z
+ */
+
+export enum Role {
+  ADMIN = 'ADMIN',
+  USER = 'USER',
+  LICENSEE = 'LICENSEE',
+}

@@ -1,0 +1,21 @@
+/*
+ * Source: src\inventory-type\dto\create-inventory-type.dto.ts
+ * Exported: 2025-12-23T23:50:13.526Z
+ */
+
+import { IsString, IsBoolean, IsOptional } from 'class-validator';
+
+export class CreateInventoryTypeDto {
+  @IsString()
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsString()
+  unit: string;
+
+  @IsBoolean()
+  isSource: boolean;
+}

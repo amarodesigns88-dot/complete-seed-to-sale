@@ -1,0 +1,28 @@
+/*
+ * Source: src\inventory-type\dto\update-inventory-type.dto.ts
+ * Exported: 2025-12-23T23:50:13.527Z
+ */
+
+import { IsString, IsBoolean, IsOptional } from 'class-validator';
+
+export class UpdateInventoryTypeDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  unit?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isSource?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}

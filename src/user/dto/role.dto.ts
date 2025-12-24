@@ -1,0 +1,12 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class RoleDto {
+  @ApiProperty({ description: 'Role UUID', example: '11111111-1111-1111-1111-111111111111' })
+  id: string;
+
+  @ApiProperty({ description: 'Role name (unique)', example: 'licensee_admin' })
+  name: string;
+
+  @ApiPropertyOptional({ description: 'Role description', example: 'Licensee administrator' })
+  description?: string | null;
+} 

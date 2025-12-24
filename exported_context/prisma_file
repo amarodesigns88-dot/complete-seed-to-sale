@@ -1,0 +1,401 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String           @id @default(uuid())
+  parentLocationId String
+  parentLocation   Location         @relation(fields: [parentLocationId], references: [id])
+  permissions      UserPermission[]
+  name             String
+  email            String           @unique
+  phone            String?
+  passwordHash     String
+  role             String
+  status           String           @default("active")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+  isActive         Boolean          @default(true)
+
+  Transfers   Transfer[]   @relation("UserTransfers")
+  Conversions Conversion[]
+  Sales       Sale[]
+  Refunds     Refund[]
+  RoomMoves   RoomMove[]
+  AuditLogs   AuditLog[]
+}
+
+model UserPermission {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  locationId String
+  modules    Json     @default("[]") // allowed modules as JSON array
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([locationId])
+}
+
+model Location {
+  id               String     @id @default(uuid())
+  parentLocationId String?
+  parentLocation   Location?  @relation("LocationToLocation", fields: [parentLocationId], references: [id])
+  childLocations   Location[] @relation("LocationToLocation")
+  ubi              String?    @unique
+  licenseNumber    String?    @unique
+  name             String
+  licenseType      String
+  enabledModules   Json       @default("[]")
+  address          String?
+  status           String     @default("active")
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  deletedAt        DateTime?
+
+  Users             User[]
+  Plants            Plant[]         @relation("LocationPlants")
+  Rooms             Room[]          @relation("LocationRooms")
+  InventoryItems    InventoryItem[] @relation("LocationInventoryItems")
+  TransfersSent     Transfer[]      @relation("SenderTransfers")
+  TransfersReceived Transfer[]      @relation("ReceiverTransfers")
+}
+
+model Plant {
+  id            String    @id @default(uuid())
+  locationId    String
+  location      Location  @relation("LocationPlants", fields: [locationId], references: [id])
+  parentPlantId String?
+  parentPlant   Plant?    @relation("PlantToPlant", fields: [parentPlantId], references: [id])
+  childPlants   Plant[]   @relation("PlantToPlant")
+  strain        String
+  roomId        String? // FK to Room
+  room          Room?     @relation("RoomPlants", fields: [roomId], references: [id])
+  phase         String
+  barcode       String    @unique
+  status        String    @default("active")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  harvestDate   DateTime?
+
+  // optional link to source inventory item used to create this plant
+  sourceInventoryId String?
+  sourceInventory   InventoryItem? @relation("InventoryToPlantSource", fields: [sourceInventoryId], references: [id])
+
+  // inventory items harvested from this plant
+  harvestedInventory InventoryItem[] @relation("HarvestedPlant")
+
+  Harvests     Harvest[]     @relation("PlantHarvests")
+  Cures        Cure[]        @relation("PlantCures")
+  Destructions Destruction[]
+  RoomMoves    RoomMove[]
+}
+
+model InventoryType {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  unit        String // e.g., "units", "grams"
+  isSource    Boolean // true if source inventory type (clone, seed, etc.)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Opposite relation to inventory items
+  inventoryItems InventoryItem[] @relation("InventoryTypeToItems")
+}
+
+model InventoryItem {
+  id                String          @id @default(uuid())
+  locationId        String
+  location          Location        @relation("LocationInventoryItems", fields: [locationId], references: [id])
+  parentInventoryId String?
+  parentInventory   InventoryItem?  @relation("InventoryParentChild", fields: [parentInventoryId], references: [id])
+  childInventories  InventoryItem[] @relation("InventoryParentChild")
+
+  harvestedPlantId String?
+  harvestedPlant   Plant?  @relation("HarvestedPlant", fields: [harvestedPlantId], references: [id])
+
+  harvestId String?
+  harvest   Harvest? @relation("HarvestInventoryItems", fields: [harvestId], references: [id])
+
+  inventoryTypeId   String?
+  inventoryType     InventoryType? @relation("InventoryTypeToItems", fields: [inventoryTypeId], references: [id])
+  inventoryTypeName String?
+  productName       String
+  quantity          Float
+  unit              String
+  barcode           String         @unique
+  status            String         @default("active")
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime?
+
+  sourcePlants Plant[] @relation("InventoryToPlantSource")
+
+  TransferItems TransferItem[] @relation("InventoryTransferItems")
+  SaleItems     SaleItem[]     @relation("InventorySaleItems")
+  Destructions  Destruction[]  @relation("InventoryDestructions")
+  RoomMoves     RoomMove[]     @relation("InventoryRoomMoves")
+
+  conversionInputs  ConversionInput[]  @relation("InventoryConversionInputs")
+  conversionOutputs ConversionOutput[] @relation("InventoryConversionOutputs")
+
+  tests Test[] @relation("InventoryTests")
+
+  @@index([harvestId])
+  @@index([harvestedPlantId])
+}
+
+model Harvest {
+  id                     String    @id @default(uuid())
+  plantId                String?
+  plant                  Plant?    @relation("PlantHarvests", fields: [plantId], references: [id])
+  batchId                String
+  wetFlowerWeight        Float
+  wetOtherMaterialWeight Float?
+  wetWasteWeight         Float?
+  harvestType            String
+  isAdditionalCollection Boolean   @default(false)
+  status                 String    @default("active")
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  deletedAt              DateTime?
+  notes                  String?
+
+  Cures          Cure[]          @relation("HarvestCures")
+  inventoryItems InventoryItem[] @relation("HarvestInventoryItems")
+}
+
+model Cure {
+  id                     String   @id @default(uuid())
+  plantId                String
+  plant                  Plant    @relation("PlantCures", fields: [plantId], references: [id])
+  harvestId              String
+  harvest                Harvest  @relation("HarvestCures", fields: [harvestId], references: [id])
+  dryFlowerWeight        Float
+  dryOtherMaterialWeight Float
+  dryWasteWeight         Float
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model Destruction {
+  id                String         @id @default(uuid())
+  plantId           String?
+  plant             Plant?         @relation(fields: [plantId], references: [id])
+  inventoryItemId   String?
+  inventoryItem     InventoryItem? @relation("InventoryDestructions", fields: [inventoryItemId], references: [id])
+  destructionReason String
+  wasteWeight       Float
+  status            String         @default("active")
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime?
+}
+
+model RoomMove {
+  id              String         @id @default(uuid())
+  plantId         String?
+  plant           Plant?         @relation(fields: [plantId], references: [id])
+  inventoryItemId String?
+  inventoryItem   InventoryItem? @relation("InventoryRoomMoves", fields: [inventoryItemId], references: [id])
+
+  fromRoomId String?
+  fromRoom   Room?   @relation("RoomMoveFromRoom", fields: [fromRoomId], references: [id])
+
+  toRoomId String?
+  toRoom   Room?   @relation("RoomMoveToRoom", fields: [toRoomId], references: [id])
+
+  moveDate  DateTime  @default(now())
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id])
+  status    String    @default("active")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model Transfer {
+  id                 String    @id @default(uuid())
+  senderLocationId   String
+  senderLocation     Location  @relation("SenderTransfers", fields: [senderLocationId], references: [id])
+  receiverLocationId String
+  receiverLocation   Location  @relation("ReceiverTransfers", fields: [receiverLocationId], references: [id])
+  userId             String
+  user               User      @relation("UserTransfers", fields: [userId], references: [id])
+  manifestNumber     String    @unique
+  status             String    @default("pending")
+  voidedAt           DateTime?
+  voidReason         String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  transferItems TransferItem[] @relation("TransferItems")
+}
+
+model TransferItem {
+  id              String        @id @default(uuid())
+  transferId      String
+  transfer        Transfer      @relation("TransferItems", fields: [transferId], references: [id])
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation("InventoryTransferItems", fields: [inventoryItemId], references: [id])
+  quantity        Float
+  status          String        @default("pending")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Conversion {
+  id             String    @id @default(uuid())
+  userId         String?
+  user           User?     @relation(fields: [userId], references: [id])
+  conversionType String
+  status         String    @default("active")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  inputs  ConversionInput[]  @relation("ConversionInputs")
+  outputs ConversionOutput[] @relation("ConversionOutputs")
+}
+
+model ConversionInput {
+  id              String        @id @default(uuid())
+  conversionId    String
+  conversion      Conversion    @relation("ConversionInputs", fields: [conversionId], references: [id])
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation("InventoryConversionInputs", fields: [inventoryItemId], references: [id])
+  quantity        Float
+}
+
+model ConversionOutput {
+  id              String        @id @default(uuid())
+  conversionId    String
+  conversion      Conversion    @relation("ConversionOutputs", fields: [conversionId], references: [id])
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation("InventoryConversionOutputs", fields: [inventoryItemId], references: [id])
+  quantity        Float
+}
+
+model TestingPanel {
+  id            String   @id @default(uuid())
+  name          String
+  inventoryType String
+  tests         Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  testsRelation Test[] @relation("PanelTests")
+}
+
+model Test {
+  id              String         @id @default(uuid())
+  inventoryItemId String?
+  inventoryItem   InventoryItem? @relation("InventoryTests", fields: [inventoryItemId], references: [id])
+  panelId         String?
+  panel           TestingPanel?  @relation("PanelTests", fields: [panelId], references: [id])
+  result          Json?
+  status          String         @default("pending")
+  voidedAt        DateTime?
+  voidReason      String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Customer {
+  id                String   @id @default(uuid())
+  name              String
+  patientCardNumber String?
+  contactInfo       Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  sales Sale[]
+}
+
+model Sale {
+  id          String    @id @default(uuid())
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  totalAmount Float
+  status      String    @default("completed")
+  voidedAt    DateTime?
+  voidReason  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  saleItems SaleItem[]
+  refunds   Refund[]
+}
+
+model SaleItem {
+  id              String        @id @default(uuid())
+  saleId          String
+  sale            Sale          @relation(fields: [saleId], references: [id])
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation("InventorySaleItems", fields: [inventoryItemId], references: [id])
+  quantity        Float
+  price           Float
+  discountAmount  Float         @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Refund {
+  id           String   @id @default(uuid())
+  saleId       String
+  sale         Sale     @relation(fields: [saleId], references: [id])
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+  refundAmount Float
+  reason       String?
+  createdAt    DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  module     String
+  entityType String
+  entityId   String
+  actionType String
+  details    Json?
+  createdAt  DateTime @default(now())
+}
+
+model Room {
+  id         String    @id @default(uuid())
+  locationId String
+  location   Location  @relation("LocationRooms", fields: [locationId], references: [id])
+  name       String
+  roomType   String    @default("cultivation")
+  status     String    @default("active")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  createdBy  String?   // optional userId who created
+  updatedBy  String?   // optional userId who updated
+  deletedBy  String?   // optional userId who deleted
+  metadata   Json?     // optional JSON metadata
+
+  plants        Plant[]    @relation("RoomPlants")
+  roomMovesFrom RoomMove[] @relation("RoomMoveFromRoom")
+  roomMovesTo   RoomMove[] @relation("RoomMoveToRoom")
+
+  @@unique([locationId, name])
+  @@index([locationId])
+}

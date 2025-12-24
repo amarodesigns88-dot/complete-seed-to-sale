@@ -1,0 +1,798 @@
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+  BadRequestException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { randomInt } from 'crypto';
+import { Room } from '@prisma/client';
+
+/**
+ * CultivationService
+ *
+ * Note: This file includes plant management, harvest, cure, destruction, and room-move logic.
+ * Added helper methods: getPlant, listPlants (with filters), updatePlant, softDeletePlant.
+ */
+@Injectable()
+export class CultivationService {
+  constructor(private prisma: PrismaService) {}
+
+  // --- Listing / fetching plants ---
+
+  // Original convenience: List active plants for a location
+  async getPlants(locationId: string) {
+    return this.prisma.plant.findMany({
+      where: { locationId, status: 'active' },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // More flexible listing with optional filters (strain, phase, status)
+  async listPlants(locationId: string, filters?: { strain?: string; phase?: string; status?: string }) {
+    const where: any = { locationId, deletedAt: null };
+    if (filters?.strain) where.strain = filters.strain;
+    if (filters?.phase) where.phase = filters.phase;
+    if (filters?.status) where.status = filters.status;
+    return this.prisma.plant.findMany({ where, orderBy: { createdAt: 'desc' } });
+  }
+
+  // Get a single plant within a location (throws if not found)
+  async getPlant(locationId: string, plantId: string) {
+    const plant = await this.prisma.plant.findFirst({
+      where: { id: plantId, locationId, deletedAt: null },
+    });
+    if (!plant) throw new NotFoundException('Plant not found');
+    return plant;
+  }
+
+  // --- Check source inventory helpers ---
+
+  // Check if source inventory exists for plant creation
+  async hasSourceInventory(locationId: string): Promise<boolean> {
+    const sourceTypes = ['clone', 'seed', 'mother_plant', 'plant_tissue'];
+
+    const count = await this.prisma.inventoryItem.count({
+      where: {
+        locationId,
+        inventoryTypeId: { in: sourceTypes },
+        quantity: { gt: 0 },
+        status: 'active',
+        deletedAt: null,
+      },
+    });
+
+    return count > 0;
+  }
+
+  // Get source inventory items for UI
+  async getSourceInventory(locationId: string) {
+    const sourceTypes = ['clone', 'seed', 'mother_plant', 'plant_tissue'];
+    return this.prisma.inventoryItem.findMany({
+      where: {
+        locationId,
+        inventoryTypeId: { in: sourceTypes },
+        quantity: { gt: 0 },
+        status: 'active',
+        deletedAt: null,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  // --- Create plant (existing implementation preserved) ---
+
+  /**
+   * Create a new plant.
+   * - Now requires roomId (FK) instead of room name.
+   * - If sourceInventoryId is provided, will attempt to decrement the inventory by `consumeAmount` (default 1).
+   * - All inventory decrement + plant creation + audit logging happen in a single transaction for consistency.
+   */
+  async createPlant(data: {
+    locationId: string;
+    strain: string;
+    roomId: string;
+    phase: string;
+    sourceInventoryId?: string | null;
+    // amount to consume from the source inventory (units consistent with inventory.unit)
+    consumeAmount?: number;
+    // optional user performing the action (for auditing)
+    userId?: string | null;
+  }) {
+    // Ensure location has at least one source (quick pre-check)
+    const hasSource = await this.hasSourceInventory(data.locationId);
+    if (!hasSource) {
+      throw new BadRequestException(
+        'Insufficient source inventory (clones, seeds, mother plants, or tissue) to create a new plant.',
+      );
+    }
+
+    // Validate roomId belongs to the location
+    const room = await this.prisma.room.findUnique({ where: { id: data.roomId } });
+    if (!room || room.locationId !== data.locationId || room.deletedAt !== null || room.status !== 'active') {
+      throw new BadRequestException('Provided roomId does not exist or does not belong to the specified location.');
+    }
+
+    const consumeAmount = typeof data.consumeAmount === 'number' && data.consumeAmount > 0 ? data.consumeAmount : 1;
+
+    // If sourceInventoryId is provided, validate it first
+    let chosenSourceId = data.sourceInventoryId ?? null;
+    if (chosenSourceId) {
+      const sourceInv = await this.prisma.inventoryItem.findUnique({
+        where: { id: chosenSourceId },
+      });
+      if (!sourceInv) {
+        throw new BadRequestException('Selected source inventory not found.');
+      }
+      if (sourceInv.locationId !== data.locationId) {
+        throw new BadRequestException('Selected source inventory does not belong to the specified location.');
+      }
+      if (sourceInv.status !== 'active' || !(sourceInv.quantity > 0)) {
+        throw new BadRequestException('Selected source inventory is not available (inactive or zero quantity).');
+      }
+      if (sourceInv.quantity < consumeAmount) {
+        throw new BadRequestException(
+          `Selected source inventory does not have sufficient quantity (requested ${consumeAmount}, available ${sourceInv.quantity}).`,
+        );
+      }
+    } else {
+      // Pick a source automatically using a priority order
+      const priority = ['clone', 'seed', 'mother_plant', 'plant_tissue'];
+      const found = await this.prisma.inventoryItem.findFirst({
+        where: {
+          locationId: data.locationId,
+          inventoryTypeId: { in: priority },
+          quantity: { gt: 0 },
+          status: 'active',
+          deletedAt: null,
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      if (!found) {
+        throw new BadRequestException('No available source inventory found for the location.');
+      }
+
+      const prioritized = await this.prisma.inventoryItem.findFirst({
+        where: {
+          locationId: data.locationId,
+          inventoryTypeId: { in: priority },
+          quantity: { gt: 0 },
+          status: 'active',
+          deletedAt: null,
+        },
+        orderBy: [{ createdAt: 'asc' }],
+      });
+
+      chosenSourceId = prioritized?.id ?? found.id;
+    }
+
+    // Now perform transaction: decrement inventory safely, create plant, create audit log(s)
+    const maxAttempts = 100;
+    let attempt = 0;
+    let lastError: any = null;
+
+    while (attempt < maxAttempts) {
+      attempt += 1;
+      const barcode = this.generate16DigitBarcode();
+
+      try {
+        const result = await this.prisma.$transaction(async (tx) => {
+          // Ensure inventory still has enough quantity and decrement atomically
+          const updateRes = await tx.inventoryItem.updateMany({
+            where: {
+              id: chosenSourceId!,
+              locationId: data.locationId,
+              status: 'active',
+              deletedAt: null,
+              quantity: { gte: consumeAmount },
+            },
+            data: {
+              quantity: { decrement: consumeAmount },
+            },
+          });
+
+          if (updateRes.count === 0) {
+            throw new BadRequestException('Source inventory no longer has sufficient quantity.');
+          }
+
+          // Create plant (now using roomId)
+          const createdPlant = await tx.plant.create({
+            data: {
+              locationId: data.locationId,
+              strain: data.strain,
+              roomId: data.roomId,
+              phase: data.phase,
+              barcode,
+              sourceInventoryId: chosenSourceId,
+            },
+          });
+
+          // Audit log: plant creation (include roomId)
+          await tx.auditLog.create({
+            data: {
+              userId: data.userId ?? null,
+              module: 'cultivation',
+              entityType: 'plant',
+              entityId: createdPlant.id,
+              actionType: 'create',
+              details: {
+                strain: data.strain,
+                roomId: data.roomId,
+                phase: data.phase,
+                sourceInventoryId: chosenSourceId,
+                consumeAmount,
+                barcode,
+              },
+            },
+          });
+
+          // Audit log: inventory consumption
+          await tx.auditLog.create({
+            data: {
+              userId: data.userId ?? null,
+              module: 'inventory',
+              entityType: 'inventoryItem',
+              entityId: chosenSourceId!,
+              actionType: 'consume',
+              details: {
+                consumeAmount,
+                resultingChange: 'decrement',
+                note: `Consumed to create plant ${createdPlant.id}`,
+              },
+            },
+          });
+
+          return createdPlant;
+        });
+
+        return result;
+      } catch (err: any) {
+        lastError = err;
+        // handle unique barcode collision
+        if (err?.code === 'P2002' && err?.meta?.target?.includes('barcode')) {
+          continue;
+        }
+        // bubble up other errors (including BadRequestException from tx)
+        throw err;
+      }
+    }
+
+    throw new InternalServerErrorException(
+      `Failed to generate a unique barcode after ${maxAttempts} attempts. Last error: ${lastError?.message ?? 'unknown'}`,
+    );
+  }
+
+  // --- New: updatePlant (partial update with validation & audit) ---
+  async updatePlant(
+    locationId: string,
+    plantId: string,
+    updateData: Partial<{
+      strain: string;
+      roomId: string;
+      phase: string;
+      status: string;
+      sourceInventoryId?: string | null;
+      parentPlantId?: string | null;
+    }>,
+    userId?: string | null,
+  ) {
+    // Ensure plant exists and belongs to location
+    const plant = await this.prisma.plant.findFirst({
+      where: { id: plantId, locationId, deletedAt: null },
+    });
+    if (!plant) throw new NotFoundException('Plant not found');
+
+    // If updating roomId, validate new room belongs to same location
+    if (updateData.roomId) {
+      const newRoom = await this.prisma.room.findUnique({ where: { id: updateData.roomId } });
+      if (!newRoom || newRoom.locationId !== locationId || newRoom.deletedAt !== null || newRoom.status !== 'active') {
+        throw new BadRequestException('New room not found or does not belong to the specified location.');
+      }
+    }
+
+    // If updating sourceInventoryId, validate source belongs to location
+    if (updateData.sourceInventoryId) {
+      const src = await this.prisma.inventoryItem.findUnique({ where: { id: updateData.sourceInventoryId } });
+      if (!src || src.locationId !== locationId) {
+        throw new BadRequestException('Provided sourceInventoryId not found in this location.');
+      }
+    }
+
+    const updated = await this.prisma.plant.update({
+      where: { id: plantId },
+      data: updateData as any,
+    });
+
+    // Audit log for update
+    await this.prisma.auditLog.create({
+      data: {
+        userId: userId ?? null,
+        module: 'cultivation',
+        entityType: 'plant',
+        entityId: plantId,
+        actionType: 'update',
+        details: updateData,
+      },
+    });
+
+    return updated;
+  }
+
+ // --- New: softDeletePlant (set deletedAt and mark status) ---
+  async softDeletePlant(locationId: string, plantId: string, userId?: string | null) {
+    // Validate plant exists in location
+    const plant = await this.prisma.plant.findFirst({ where: { id: plantId, locationId, deletedAt: null } });
+    if (!plant) throw new NotFoundException('Plant not found');
+
+    const deleted = await this.prisma.plant.update({
+      where: { id: plantId },
+      data: { deletedAt: new Date(), status: 'deleted' },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        userId: userId ?? null,
+        module: 'cultivation',
+        entityType: 'plant',
+        entityId: plantId,
+        actionType: 'delete',
+        details: {
+          // serialize Date to JSON-safe ISO string
+          deletedAt: deleted.deletedAt ? deleted.deletedAt.toISOString() : null,
+        },
+      },
+    });
+
+    return deleted;
+  }
+
+  // Fetch a single plant by id (original helper)
+  async getPlantById(id: string) {
+    return this.prisma.plant.findUnique({ where: { id } });
+  }
+
+  // --- Harvest creation (existing implementation preserved) ---
+
+  // Create a harvest record for a plant
+  async createHarvest(plantId: string, dto: any, userId?: string) {
+    const plant = await this.getPlantById(plantId);
+    if (!plant) throw new NotFoundException('Plant not found');
+
+    const batchId = dto.batchId ?? `batch-${Date.now()}`;
+
+    const harvest = await this.prisma.harvest.create({
+      data: {
+        plantId,
+        batchId,
+        harvestType: dto.harvestType ?? 'regular',
+        wetFlowerWeight: dto.wetFlowerWeight,
+        wetOtherMaterialWeight: dto.wetOtherMaterialWeight ?? null,
+        wetWasteWeight: dto.wetWasteWeight ?? null,
+      },
+    });
+
+    // Audit
+    await this.prisma.auditLog.create({
+      data: {
+        userId: userId ?? null,
+        module: 'cultivation',
+        entityType: 'harvest',
+        entityId: harvest.id,
+        actionType: 'create',
+        details: {
+          plantId,
+          batchId,
+          wetFlowerWeight: harvest.wetFlowerWeight,
+        },
+      },
+    });
+
+    return harvest;
+  }
+
+  // --- Cure creation (existing implementation preserved) ---
+
+  // Create a cure record (linked to a harvest) and generate inventory items from dry weights.
+  async createCure(harvestId: string, dto: any, userId?: string) {
+    if (typeof dto.dryFlowerWeight !== 'number' || isNaN(dto.dryFlowerWeight) || dto.dryFlowerWeight < 0) {
+      throw new BadRequestException('dryFlowerWeight must be a non-negative number.');
+    }
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const harvest = await tx.harvest.findUnique({ where: { id: harvestId } });
+      if (!harvest) throw new NotFoundException('Harvest not found');
+
+      const plant = harvest.plantId ? await tx.plant.findUnique({ where: { id: harvest.plantId } }) : null;
+      if (!plant || !plant.locationId) {
+        throw new BadRequestException('Cannot create cure inventory: harvest has no associated plant/location.');
+      }
+
+      if (
+        typeof dto.dryFlowerWeight === 'number' &&
+        typeof harvest.wetFlowerWeight === 'number' &&
+        dto.dryFlowerWeight > harvest.wetFlowerWeight
+      ) {
+        throw new BadRequestException('Dry flower weight cannot exceed wet flower weight.');
+      }
+
+      const cure = await tx.cure.create({
+        data: {
+          harvestId,
+          plantId: plant?.id ?? harvest.plantId, // use plant.id if loaded, else fallback to harvest.plantId
+          dryFlowerWeight: dto.dryFlowerWeight,
+          dryOtherMaterialWeight: dto.dryOtherMaterialWeight ?? null,
+          dryWasteWeight: dto.dryWasteWeight ?? null,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: userId ?? null,
+          module: 'cultivation',
+          entityType: 'cure',
+          entityId: cure.id,
+          actionType: 'create',
+          details: {
+            harvestId,
+            dryFlowerWeight: cure.dryFlowerWeight,
+            dryOtherMaterialWeight: cure.dryOtherMaterialWeight,
+            dryWasteWeight: cure.dryWasteWeight,
+          },
+        },
+      });
+
+      const createdInventoryItems: any[] = [];
+      const makeInventoryItem = async (opts: {
+        inventoryType: string;
+        productName: string;
+        quantity: number;
+        unit?: string;
+      }) => {
+        const data: any = {
+          locationId: plant.locationId,
+          productName: opts.productName,
+          inventoryType: opts.inventoryType,
+          quantity: opts.quantity,
+          unit: opts.unit ?? 'g',
+          status: 'active',
+          harvest: { connect: { id: harvest.id } },
+        };
+
+        if (harvest.plantId) {
+          data.harvestedPlant = { connect: { id: harvest.plantId } };
+        }
+
+        const item = await tx.inventoryItem.create({ data });
+
+        await tx.auditLog.create({
+          data: {
+            userId: userId ?? null,
+            module: 'inventory',
+            entityType: 'inventoryItem',
+            entityId: item.id,
+            actionType: 'create',
+            details: {
+              from: 'cure',
+              harvestId: harvest.id,
+              harvestedPlantId: harvest.plantId ?? null,
+              inventoryType: opts.inventoryType,
+              quantity: opts.quantity,
+              unit: opts.unit ?? 'g',
+            },
+          },
+        });
+
+        createdInventoryItems.push(item);
+      };
+
+      if (typeof dto.dryFlowerWeight === 'number' && dto.dryFlowerWeight > 0) {
+        await makeInventoryItem({
+          inventoryType: 'cure_flower',
+          productName: `Cured Flower - ${harvest.batchId ?? harvest.id}`,
+          quantity: dto.dryFlowerWeight,
+          unit: 'g',
+        });
+      }
+
+      if (typeof dto.dryOtherMaterialWeight === 'number' && dto.dryOtherMaterialWeight > 0) {
+        await makeInventoryItem({
+          inventoryType: 'cure_other',
+          productName: `Cured Other - ${harvest.batchId ?? harvest.id}`,
+          quantity: dto.dryOtherMaterialWeight,
+          unit: 'g',
+        });
+      }
+
+      if (typeof dto.dryWasteWeight === 'number' && dto.dryWasteWeight > 0) {
+        await makeInventoryItem({
+          inventoryType: 'cure_waste',
+          productName: `Cure Waste - ${harvest.batchId ?? harvest.id}`,
+          quantity: dto.dryWasteWeight,
+          unit: 'g',
+        });
+      }
+
+      return { cure, inventoryItems: createdInventoryItems };
+    });
+
+    return result;
+  }
+
+  // --- Destruction (existing implementation preserved) ---
+
+  // Create a destruction record for a plant or an inventory item.
+  async createDestruction(params: {
+    plantId?: string | null;
+    inventoryItemId?: string | null;
+    destructionReason: string;
+    wasteAmount: number;
+    userId?: string | null;
+  }) {
+    const { plantId, inventoryItemId, destructionReason, wasteAmount, userId } = params;
+
+    if (!plantId && !inventoryItemId) {
+      throw new BadRequestException('Must provide either plantId or inventoryItemId for destruction.');
+    }
+
+    if (typeof wasteAmount !== 'number' || isNaN(wasteAmount) || wasteAmount <= 0) {
+      throw new BadRequestException('wasteAmount must be a positive number and is required for destruction.');
+    }
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      if (inventoryItemId) {
+        const inv = await tx.inventoryItem.findUnique({ where: { id: inventoryItemId } });
+        if (!inv) throw new NotFoundException('Inventory item not found');
+
+        if (inv.quantity > 0) {
+          const deduct = wasteAmount > 0 ? wasteAmount : inv.quantity;
+          if (inv.quantity < deduct) {
+            throw new BadRequestException(
+              `Insufficient inventory quantity to destroy (requested ${deduct}, available ${inv.quantity}).`,
+            );
+          }
+
+          await tx.inventoryItem.update({
+            where: { id: inventoryItemId },
+            data: {
+              quantity: { decrement: deduct },
+            },
+          });
+
+          await tx.auditLog.create({
+            data: {
+              userId: userId ?? null,
+              module: 'inventory',
+              entityType: 'inventoryItem',
+              entityId: inventoryItemId,
+              actionType: 'destruct',
+              details: {
+                reason: destructionReason,
+                deductedAmount: deduct,
+              },
+            },
+          });
+        }
+      }
+
+      if (plantId) {
+        const plant = await tx.plant.findUnique({ where: { id: plantId } });
+        if (!plant) throw new NotFoundException('Plant not found');
+
+        const harvest = await tx.harvest.findFirst({
+          where: { plantId },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (harvest) {
+          const existingCure = await tx.cure.findFirst({ where: { harvestId: harvest.id } });
+
+          if (!existingCure) {
+            const currentWet = typeof harvest.wetFlowerWeight === 'number' ? harvest.wetFlowerWeight : 0;
+            if (currentWet < wasteAmount) {
+              throw new BadRequestException(
+                `Destruction wasteAmount (${wasteAmount}) exceeds harvest's wet flower weight (${currentWet}).`,
+              );
+            }
+
+            await tx.harvest.update({
+              where: { id: harvest.id },
+              data: {
+                wetFlowerWeight: { decrement: wasteAmount },
+                plantId: null,
+              },
+            });
+
+            await tx.auditLog.create({
+              data: {
+                userId: userId ?? null,
+                module: 'cultivation',
+                entityType: 'harvest',
+                entityId: harvest.id,
+                actionType: 'adjust_for_destruction',
+                details: {
+                  removedPlantId: plantId,
+                  deductedWetFlowerWeight: wasteAmount,
+                  originalWetFlowerWeight: currentWet,
+                  reason: destructionReason,
+                },
+              },
+            });
+          }
+        }
+
+        await tx.plant.update({
+          where: { id: plantId },
+          data: { status: 'destroyed' },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            userId: userId ?? null,
+            module: 'cultivation',
+            entityType: 'plant',
+            entityId: plantId,
+            actionType: 'destruct',
+            details: {
+              reason: destructionReason,
+              wasteAmount,
+            },
+          },
+        });
+      }
+
+      const destruction = await tx.destruction.create({
+        data: {
+          plantId: plantId ?? null,
+          inventoryItemId: inventoryItemId ?? null,
+          destructionReason,
+          wasteWeight: wasteAmount,
+        },
+      });
+
+      return destruction;
+    });
+
+    return result;
+  }
+
+  // --- Room moves / Rooms (existing implementation preserved) ---
+
+  // Record a room move for plant or inventory item with room-location validation
+  async createRoomMove(
+    plantId?: string,
+    inventoryItemId?: string | null,
+    dto?: { fromRoomId?: string; toRoomId: string },
+    userId?: string,
+  ) {
+    if (!dto || !dto.toRoomId) {
+      throw new BadRequestException('Target roomId (toRoomId) must be specified.');
+    }
+
+    // Fetch current plant or inventory item to get current roomId and location
+    let currentRoomId: string | null = null;
+    let locationId: string | null = null;
+
+    if (plantId) {
+      const plant = await this.getPlantById(plantId);
+      if (!plant) throw new NotFoundException('Plant not found');
+      currentRoomId = plant.roomId ?? null;
+      locationId = plant.locationId;
+    } else if (inventoryItemId) {
+      const inv = await this.prisma.inventoryItem.findUnique({
+        where: { id: inventoryItemId },
+      });
+      if (!inv) throw new NotFoundException('Inventory item not found');
+      currentRoomId = (inv as any).roomId ?? null; // if inventory has roomId in future
+      locationId = inv.locationId;
+    } else {
+      throw new BadRequestException('Must provide either plantId or inventoryItemId for room move.');
+    }
+
+    // Validate toRoom by id and that it belongs to the location
+    const toRoom = await this.prisma.room.findUnique({ where: { id: dto.toRoomId } });
+    if (!toRoom || toRoom.locationId !== locationId || toRoom.status !== 'active' || toRoom.deletedAt !== null) {
+      throw new BadRequestException('Target roomId does not exist or does not belong to the specified location.');
+    }
+
+    let fromRoomRecord: Room | null = null;
+    if (currentRoomId) {
+      fromRoomRecord = await this.prisma.room.findUnique({ where: { id: currentRoomId } });
+      if (!fromRoomRecord || fromRoomRecord.locationId !== locationId || fromRoomRecord.status !== 'active' || fromRoomRecord.deletedAt !== null) {
+        // If existing current roomId is invalid, we still allow the move but set fromRoomId null and warn
+        fromRoomRecord = null;
+      }
+    }
+
+    // Create the room move record (use fromRoomId/toRoomId)
+    const move = await this.prisma.roomMove.create({
+      data: {
+        plantId: plantId ?? null,
+        inventoryItemId: inventoryItemId ?? null,
+        fromRoomId: fromRoomRecord ? fromRoomRecord.id : null,
+        toRoomId: toRoom.id,
+        userId: userId ?? null,
+      },
+    });
+
+    // Update plant roomId if applicable
+    if (plantId) {
+      await this.prisma.plant.update({
+        where: { id: plantId },
+        data: { roomId: toRoom.id },
+      });
+    }
+
+    // If inventory items will track roomId in future, update here similarly.
+
+    // Audit log with before and after room states (IDs)
+    await this.prisma.auditLog.create({
+      data: {
+        userId: userId ?? null,
+        module: 'cultivation',
+        entityType: plantId ? 'plant' : 'inventoryItem',
+        entityId: plantId ?? (inventoryItemId as string),
+        actionType: 'room_move',
+        details: {
+          fromRoomId: currentRoomId,
+          toRoomId: toRoom.id,
+        },
+      },
+    });
+
+    return move;
+  }
+
+  // Create a new room in a location
+  async createRoom(locationId: string, name: string, userId?: string) {
+    const existing = await this.prisma.room.findFirst({
+      where: { locationId, name, status: 'active', deletedAt: null },
+    });
+    if (existing) {
+      throw new BadRequestException(`Room with name '${name}' already exists in this location.`);
+    }
+
+    const room = await this.prisma.room.create({
+      data: {
+        locationId,
+        name,
+        status: 'active',
+      },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        userId: userId ?? null,
+        module: 'cultivation',
+        entityType: 'room',
+        entityId: room.id,
+        actionType: 'create',
+        details: { locationId, name },
+      },
+    });
+
+    return room;
+  }
+
+  // List all active rooms for a location
+  async listRooms(locationId: string) {
+    return this.prisma.room.findMany({
+      where: { locationId, status: 'active', deletedAt: null },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  // Convenience wrapper
+  async movePlantToRoom(plantId: string, toRoomId: string, userId?: string) {
+    const plant = await this.getPlantById(plantId);
+    if (!plant) throw new NotFoundException('Plant not found');
+
+    return this.createRoomMove(plantId, null, { fromRoomId: plant.roomId ?? undefined, toRoomId }, userId);
+  }
+
+  private generate16DigitBarcode(): string {
+    const left = randomInt(0, 100_000_000).toString().padStart(8, '0');
+    const right = randomInt(0, 100_000_000).toString().padStart(8, '0');
+    return `${left}${right}`;
+  }
+}

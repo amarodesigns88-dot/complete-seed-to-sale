@@ -1,0 +1,311 @@
+/*
+ * Source: src\cultivation\cultivation.controller.ts
+ * Exported: 2025-12-23T23:50:13.501Z
+ */
+
+// src/cultivation/cultivation.controller.ts
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+  NotFoundException,
+  BadRequestException,
+  ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import { CultivationService } from './cultivation.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { LocationModuleGuard } from '../auth/location.guard';
+import { Roles } from '../auth/roles.decorator';
+import { LocationModulePermissions } from '../auth/location.decorator';
+import { CreateHarvestDto } from './dto/create-harvest.dto';
+import { RoomMoveDto } from './dto/room-move.dto';
+import { CreatePlantDto } from './dto/create-plant.dto';
+import { UpdatePlantDto } from './dto/update-plant.dto';
+import { CreateCureDto } from './dto/create-cure.dto';
+import { CreateDestructionDto } from './dto/create-destruction.dto';
+import { CreateRoomDto } from './dto/create-room.dto';
+
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiParam,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+
+@ApiTags('Cultivation')
+@ApiBearerAuth()
+@Controller('cultivation')
+@UseGuards(JwtAuthGuard, RolesGuard, LocationModuleGuard)
+export class CultivationController {
+  constructor(private cultivationService: CultivationService) {}
+
+  // List plants (active)
+  @Get(':locationId/plants')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'List all plants for a location' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiResponse({ status: 200, description: 'List of plants returned' })
+  getPlants(@Param('locationId', ParseUUIDPipe) locationId: string) {
+    return this.cultivationService.getPlants(locationId);
+  }
+
+  // Get a single plant by id
+  @Get(':locationId/plants/:plantId')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Get a plant by id' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiParam({ name: 'plantId', description: 'Plant UUID' })
+  @ApiResponse({ status: 200, description: 'Plant details returned' })
+  async getPlant(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Param('plantId', ParseUUIDPipe) plantId: string,
+  ) {
+    const plant = await this.cultivationService.getPlantById(plantId);
+    if (!plant || plant.locationId !== locationId) {
+      throw new NotFoundException('Plant not found in the specified location');
+    }
+    return plant;
+  }
+
+  // Create plant
+  @Post(':locationId/plants')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Create a new plant' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiBody({ type: CreatePlantDto })
+  @ApiResponse({ status: 201, description: 'Plant created successfully' })
+  async createPlant(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Body() body: CreatePlantDto,
+    @Req() req: any,
+  ) {
+    try {
+      const userId = req.user?.userId ?? req.user?.id ?? null;
+
+      return await this.cultivationService.createPlant({
+        locationId,
+        strain: body.strain,
+        roomId: body.roomId,
+        phase: body.phase,
+        sourceInventoryId: body.sourceInventoryId,
+        consumeAmount: body.consumeAmount,
+        userId,
+      });
+    } catch (err) {
+      if (err instanceof BadRequestException) {
+        throw err;
+      }
+      throw new BadRequestException(err.message || 'Failed to create plant');
+    }
+  }
+
+  // Update plant (partial)
+  @Put(':locationId/plants/:plantId')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Update a plant (partial)' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiParam({ name: 'plantId', description: 'Plant UUID' })
+  @ApiBody({ type: UpdatePlantDto })
+  @ApiResponse({ status: 200, description: 'Plant updated successfully' })
+  async updatePlant(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Param('plantId', ParseUUIDPipe) plantId: string,
+    @Body() body: Partial<CreatePlantDto & { phase?: string; status?: string; sourceInventoryId?: string }>,
+    @Req() req: any,
+  ) {
+    const plant = await this.cultivationService.getPlantById(plantId);
+    if (!plant || plant.locationId !== locationId) {
+      throw new NotFoundException('Plant not found in the specified location');
+    }
+
+    try {
+      const userId = req.user?.userId ?? req.user?.id ?? null;
+      return await this.cultivationService.updatePlant(locationId, plantId, body as any, userId);
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      throw new BadRequestException(err.message || 'Failed to update plant');
+    }
+  }
+
+  // Soft delete plant
+  @Delete(':locationId/plants/:plantId')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Soft delete a plant' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiParam({ name: 'plantId', description: 'Plant UUID' })
+  @ApiResponse({ status: 204, description: 'Plant deleted successfully' })
+  async deletePlant(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Param('plantId', ParseUUIDPipe) plantId: string,
+    @Req() req: any,
+  ) {
+    const plant = await this.cultivationService.getPlantById(plantId);
+    if (!plant || plant.locationId !== locationId) {
+      throw new NotFoundException('Plant not found in the specified location');
+    }
+
+    try {
+      const userId = req.user?.userId ?? req.user?.id ?? null;
+      return await this.cultivationService.softDeletePlant(locationId, plantId, userId);
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      throw new BadRequestException(err.message || 'Failed to delete plant');
+    }
+  }
+
+  // Source inventory lookup
+  @Get(':locationId/source-inventory')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Get source inventory for cultivation at a location' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiResponse({ status: 200, description: 'Source inventory items returned' })
+  getSourceInventory(@Param('locationId', ParseUUIDPipe) locationId: string) {
+    return this.cultivationService.getSourceInventory(locationId);
+  }
+
+  // Harvest a plant
+  @Post(':locationId/plants/:plantId/harvest')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Harvest a plant and create a harvest record' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiParam({ name: 'plantId', description: 'Plant UUID' })
+  @ApiBody({ type: CreateHarvestDto })
+  @ApiResponse({ status: 201, description: 'Harvest created' })
+  async harvestPlant(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Param('plantId', ParseUUIDPipe) plantId: string,
+    @Body() dto: CreateHarvestDto,
+    @Req() req: any,
+  ) {
+    const plant = await this.cultivationService.getPlantById(plantId);
+    if (!plant || plant.locationId !== locationId) {
+      throw new NotFoundException('Plant not found in the specified location');
+    }
+
+    return this.cultivationService.createHarvest(plantId, dto, req.user?.userId ?? req.user?.id ?? null);
+  }
+
+  // Create cure from harvest
+  @Post(':locationId/harvests/:harvestId/cure')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Create a cure record for a harvest' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiParam({ name: 'harvestId', description: 'Harvest UUID' })
+  @ApiBody({ type: CreateCureDto })
+  @ApiResponse({ status: 201, description: 'Cure created' })
+  async createCure(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Param('harvestId', ParseUUIDPipe) harvestId: string,
+    @Body() dto: CreateCureDto,
+    @Req() req: any,
+  ) {
+    // Optional: validate harvest belongs to location before calling service
+    return this.cultivationService.createCure(harvestId, dto, req.user?.userId ?? req.user?.id ?? null);
+  }
+
+  // Create destruction record
+  @Post(':locationId/destructions')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Create a destruction (waste) record' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiBody({ type: CreateDestructionDto })
+  @ApiResponse({ status: 201, description: 'Destruction recorded' })
+  async createDestruction(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Body() dto: CreateDestructionDto,
+    @Req() req: any,
+  ) {
+    // Validate plant belongs to location if provided
+    if ((dto as any).plantId) {
+      const plant = await this.cultivationService.getPlantById((dto as any).plantId);
+      if (!plant || plant.locationId !== locationId) {
+        throw new NotFoundException('Plant not found in the specified location');
+      }
+    }
+
+    return this.cultivationService.createDestruction({
+      plantId: (dto as any).plantId ?? null,
+      inventoryItemId: (dto as any).inventoryItemId ?? null,
+      destructionReason: (dto as any).destructionReason ?? (dto as any).reason ?? null,
+      wasteAmount: (dto as any).wasteAmount ?? (dto as any).weight ?? 0,
+      userId: req.user?.userId ?? req.user?.id ?? null,
+    });
+  }
+
+  // Move plant to another room (room-move DTO)
+  @Post(':locationId/plants/:plantId/room-move')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Move a plant between rooms' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiParam({ name: 'plantId', description: 'Plant UUID' })
+  @ApiBody({ type: RoomMoveDto })
+  @ApiResponse({ status: 201, description: 'Room move recorded' })
+  async movePlantRoom(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Param('plantId', ParseUUIDPipe) plantId: string,
+    @Body() dto: RoomMoveDto,
+    @Req() req: any,
+  ) {
+    const plant = await this.cultivationService.getPlantById(plantId);
+    if (!plant || plant.locationId !== locationId) {
+      throw new NotFoundException('Plant not found in the specified location');
+    }
+
+    return this.cultivationService.createRoomMove(
+      plantId,
+      undefined,
+      { fromRoomId: (dto as any).fromRoomId, toRoomId: (dto as any).toRoomId },
+      req.user?.userId ?? req.user?.id ?? null,
+    );
+  }
+
+  // Create a room
+  @Post(':locationId/rooms')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Create a room within a location' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiBody({ type: CreateRoomDto })
+  @ApiResponse({ status: 201, description: 'Room created' })
+  async createRoom(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Body() body: CreateRoomDto,
+    @Req() req: any,
+  ) {
+    const userId = req.user?.userId ?? req.user?.id ?? null;
+    return this.cultivationService.createRoom(locationId, body.name, userId);
+  }
+
+  // List rooms
+  @Get(':locationId/rooms')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'List rooms for a location' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiResponse({ status: 200, description: 'Rooms returned' })
+  listRooms(@Param('locationId', ParseUUIDPipe) locationId: string) {
+    return this.cultivationService.listRooms(locationId);
+  }
+}

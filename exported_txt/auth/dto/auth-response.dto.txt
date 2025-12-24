@@ -1,0 +1,14 @@
+/*
+ * Source: src\auth\dto\auth-response.dto.ts
+ * Exported: 2025-12-23T23:50:13.480Z
+ */
+
+import { ApiProperty } from '@nestjs/swagger';
+
+export class AuthResponseDto {
+  @ApiProperty({
+    description: 'JWT access token',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  })
+  accessToken: string;
+}

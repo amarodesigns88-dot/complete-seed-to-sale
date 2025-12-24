@@ -1,0 +1,931 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/auth/test": {
+      "get": {
+        "operationId": "AuthController_test",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Auth controller is working"
+          }
+        },
+        "summary": "Health check for auth controller",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful login returns JWT token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "accessToken": "eyJ..."
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        },
+        "summary": "Log in and receive a JWT access token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/licensee/{locationId}/dashboard": {
+      "get": {
+        "operationId": "LicenseeController_getDashboard",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Licensee"
+        ]
+      }
+    },
+    "/user/profile": {
+      "get": {
+        "operationId": "UserController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Authenticated user profile returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "uuid",
+                    "email": "user@example.com",
+                    "roles": [
+                      "licensee_admin"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get profile for current authenticated user",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/cultivation/{locationId}/plants": {
+      "get": {
+        "operationId": "CultivationController_getPlants",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of plants returned"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all plants for a location",
+        "tags": [
+          "Cultivation"
+        ]
+      },
+      "post": {
+        "operationId": "CultivationController_createPlant",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plant created successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new plant",
+        "tags": [
+          "Cultivation"
+        ]
+      }
+    },
+    "/cultivation/{locationId}/plants/{plantId}": {
+      "get": {
+        "operationId": "CultivationController_getPlant",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": true,
+            "in": "path",
+            "description": "Plant UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plant details returned"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a plant by id",
+        "tags": [
+          "Cultivation"
+        ]
+      },
+      "put": {
+        "operationId": "CultivationController_updatePlant",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": true,
+            "in": "path",
+            "description": "Plant UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plant updated successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a plant (partial)",
+        "tags": [
+          "Cultivation"
+        ]
+      },
+      "delete": {
+        "operationId": "CultivationController_deletePlant",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": true,
+            "in": "path",
+            "description": "Plant UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Plant deleted successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Soft delete a plant",
+        "tags": [
+          "Cultivation"
+        ]
+      }
+    },
+    "/cultivation/{locationId}/source-inventory": {
+      "get": {
+        "operationId": "CultivationController_getSourceInventory",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Source inventory items returned"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get source inventory for cultivation at a location",
+        "tags": [
+          "Cultivation"
+        ]
+      }
+    },
+    "/cultivation/{locationId}/plants/{plantId}/harvest": {
+      "post": {
+        "operationId": "CultivationController_harvestPlant",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": true,
+            "in": "path",
+            "description": "Plant UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHarvestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Harvest created"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Harvest a plant and create a harvest record",
+        "tags": [
+          "Cultivation"
+        ]
+      }
+    },
+    "/cultivation/{locationId}/harvests/{harvestId}/cure": {
+      "post": {
+        "operationId": "CultivationController_createCure",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "harvestId",
+            "required": true,
+            "in": "path",
+            "description": "Harvest UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCureDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cure created"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a cure record for a harvest",
+        "tags": [
+          "Cultivation"
+        ]
+      }
+    },
+    "/cultivation/{locationId}/destructions": {
+      "post": {
+        "operationId": "CultivationController_createDestruction",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDestructionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Destruction recorded"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a destruction (waste) record",
+        "tags": [
+          "Cultivation"
+        ]
+      }
+    },
+    "/cultivation/{locationId}/plants/{plantId}/room-move": {
+      "post": {
+        "operationId": "CultivationController_movePlantRoom",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": true,
+            "in": "path",
+            "description": "Plant UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoomMoveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Room move recorded"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Move a plant between rooms",
+        "tags": [
+          "Cultivation"
+        ]
+      }
+    },
+    "/cultivation/{locationId}/rooms": {
+      "post": {
+        "operationId": "RoomController_createRoom",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "UUID of the location (license) where the room will be created",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoomDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Room created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or missing room name"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Insufficient role or module permission"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new cultivation room for a location",
+        "tags": [
+          "Cultivation � Rooms"
+        ]
+      },
+      "get": {
+        "operationId": "RoomController_listRooms",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "UUID of the location to list rooms for",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of rooms returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Insufficient role or module permission"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List cultivation rooms for a location",
+        "tags": [
+          "Cultivation � Rooms"
+        ]
+      }
+    },
+    "/cultivation/{ubi}/plants/{plantId}/cure": {
+      "post": {
+        "operationId": "CureController_curePlant",
+        "parameters": [
+          {
+            "name": "ubi",
+            "required": true,
+            "in": "path",
+            "description": "Location UBI (parent location identifier)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "plantId",
+            "required": true,
+            "in": "path",
+            "description": "UUID of the plant to cure",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCureDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cure record created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload or constraint violation"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "summary": "Create a cure record for a plant (move from harvest -> cure workflow)",
+        "tags": [
+          "Cultivation � Cure"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Seed to Sale API",
+    "description": "API documentation for Seed to Sale system",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "User password"
+          },
+          "ubi": {
+            "type": "string",
+            "description": "Optional UBI (location) to scope login",
+            "example": "UBI-123"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "CreatePlantDto": {
+        "type": "object",
+        "properties": {
+          "strain": {
+            "type": "string",
+            "description": "Strain identifier or name. If you use UUIDs for strain, change validator to @IsUUID.",
+            "example": "Blue Dream"
+          },
+          "roomId": {
+            "type": "string",
+            "description": "Room id (UUID) where the plant will be placed",
+            "example": "a3f1c9e2-..."
+          },
+          "phase": {
+            "type": "string",
+            "description": "Plant phase (e.g., veg, flower, mother)",
+            "example": "veg"
+          },
+          "sourceInventoryId": {
+            "type": "string",
+            "description": "Source inventory id used to create this plant (optional)",
+            "example": "b2f3c4d5-..."
+          },
+          "consumeAmount": {
+            "type": "number",
+            "description": "Amount to consume from the source inventory item. Defaults to 1 when omitted.",
+            "example": 1
+          }
+        },
+        "required": [
+          "strain",
+          "roomId",
+          "phase"
+        ]
+      },
+      "UpdatePlantDto": {
+        "type": "object",
+        "properties": {
+          "strain": {
+            "type": "string",
+            "description": "Strain identifier or name"
+          },
+          "roomId": {
+            "type": "string",
+            "description": "Room id (UUID) where the plant is located"
+          },
+          "phase": {
+            "type": "string",
+            "description": "Plant phase (e.g., veg, flower, mother)"
+          },
+          "sourceInventoryId": {
+            "type": "string",
+            "description": "Source inventory id used to create this plant"
+          },
+          "consumeAmount": {
+            "type": "number",
+            "description": "Amount to consume from the source inventory item"
+          }
+        }
+      },
+      "CreateHarvestDto": {
+        "type": "object",
+        "properties": {
+          "harvestType": {
+            "type": "string",
+            "description": "Type of harvest (e.g., \"flower\", \"trim\", \"clone-harvest\")",
+            "example": "flower"
+          },
+          "wetFlowerWeight": {
+            "type": "number",
+            "description": "Wet weight of flower in grams",
+            "example": 1500.25,
+            "minimum": 0
+          },
+          "wetOtherMaterialWeight": {
+            "type": "number",
+            "description": "Wet weight of other material (trim, stems) in grams",
+            "example": 120.5,
+            "minimum": 0
+          },
+          "wetWasteWeight": {
+            "type": "number",
+            "description": "Wet weight of waste measured at harvest in grams",
+            "example": 5,
+            "minimum": 0
+          },
+          "batchId": {
+            "type": "string",
+            "description": "Optional batch identifier assigned to this harvest (for traceability)",
+            "example": "BATCH-2025-12-001"
+          },
+          "isAdditionalCollection": {
+            "type": "boolean",
+            "description": "Flag indicating this harvest is an additional collection for an existing batch",
+            "example": false
+          }
+        },
+        "required": [
+          "harvestType",
+          "wetFlowerWeight"
+        ]
+      },
+      "CreateCureDto": {
+        "type": "object",
+        "properties": {
+          "dryFlowerWeight": {
+            "type": "number",
+            "description": "Dry weight of flower in grams",
+            "example": 120.5,
+            "minimum": 0
+          },
+          "dryOtherMaterialWeight": {
+            "type": "number",
+            "description": "Dry weight of other material (trim, stems, etc.) in grams",
+            "example": 10,
+            "minimum": 0
+          },
+          "dryWasteWeight": {
+            "type": "number",
+            "description": "Dry weight of waste in grams recorded during curing",
+            "example": 2.5,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "dryFlowerWeight",
+          "dryOtherMaterialWeight",
+          "dryWasteWeight"
+        ]
+      },
+      "CreateDestructionDto": {
+        "type": "object",
+        "properties": {
+          "plantId": {
+            "type": "string",
+            "description": "UUID of the plant being destroyed (if destruction targets a plant)",
+            "format": "uuid",
+            "example": "a3f2c8ae-5f8d-4d6f-9b12-0123456789ab"
+          },
+          "inventoryItemId": {
+            "type": "string",
+            "description": "UUID of the inventory item being destroyed (if destruction targets inventory)",
+            "format": "uuid",
+            "example": "b4d1e9bf-6f9e-41c0-8c34-abcdef012345"
+          },
+          "destructionReason": {
+            "type": "string",
+            "description": "Reason for destruction (required)",
+            "example": "Pest infestation - batch deemed unsafe"
+          },
+          "wasteAmount": {
+            "type": "number",
+            "description": "Amount of material destroyed in grams (numeric, >= 0)",
+            "example": 250,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "destructionReason",
+          "wasteAmount"
+        ]
+      },
+      "RoomMoveDto": {
+        "type": "object",
+        "properties": {
+          "toRoomId": {
+            "type": "string",
+            "description": "UUID of the destination room",
+            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+            "format": "uuid"
+          },
+          "fromRoomId": {
+            "type": "string",
+            "description": "UUID of the source room (optional)",
+            "example": "a3f2c8ae-5f8d-4d6f-9b12-0123456789ab",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "toRoomId"
+        ]
+      },
+      "CreateRoomDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-friendly room name",
+            "example": "Flower Room A-1"
+          },
+          "roomType": {
+            "type": "string",
+            "description": "Optional room type (e.g., \"flower\", \"veg\", \"mother\", \"dry\")",
+            "example": "flower"
+          },
+          "status": {
+            "type": "string",
+            "description": "Optional room status (e.g., \"active\", \"inactive\", \"quarantine\")",
+            "example": "active"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Optional JSON metadata bag for room (sensors, notes, capacity, etc.)",
+            "example": {
+              "capacity": 200,
+              "climateController": "CC-42",
+              "notes": "Near intake"
+            },
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    }
+  }
+}

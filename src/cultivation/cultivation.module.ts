@@ -1,0 +1,23 @@
+import { Module } from '@nestjs/common';
+import { CultivationController } from './cultivation.controller';
+import { CultivationService } from './cultivation.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { RoomController } from './room.controller';
+import { HarvestService } from './harvest.service';
+import { CureService } from './cure.service';
+import { CureController } from './cure.controller';
+import { DestructionService } from './destruction.service';
+import { AuditService } from '../common/audit.service';
+
+@Module({
+  controllers: [CultivationController, RoomController, CureController],
+  providers: [
+    CultivationService,
+    PrismaService,
+    HarvestService,
+    CureService,
+    DestructionService,
+    AuditService,  // <-- added here
+  ],
+})
+export class CultivationModule {}

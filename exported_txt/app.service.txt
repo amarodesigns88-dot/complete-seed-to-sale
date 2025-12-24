@@ -1,0 +1,13 @@
+/*
+ * Source: src\app.service.ts
+ * Exported: 2025-12-23T23:50:13.474Z
+ */
+
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class AppService {
+  getHello(): string {
+    return 'Hello World!';
+  }
+}

@@ -1,0 +1,65 @@
+import { Controller, Get, Post, Put, Delete, Param, Body, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiOkResponse, ApiCreatedResponse, ApiNoContentResponse, ApiBadRequestResponse, ApiNotFoundResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { CreateRoleDto } from './dto/create-role.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
+import { RoleDto } from './dto/role.dto';
+
+@ApiTags('Roles')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+@Controller('roles')
+export class RolesController {
+  constructor(private readonly roleService: any) {}
+
+  @UseGuards(RolesGuard)
+  @Roles('system_admin')
+  @Get()
+  @ApiOperation({ summary: 'List roles' })
+  @ApiOkResponse({ type: [RoleDto], description: 'List of roles' })
+  async listRoles(): Promise<RoleDto[]> {
+    return this.roleService.listRoles();
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('system_admin')
+  @Get(':id')
+  @ApiOperation({ summary: 'Get role by ID' })
+  @ApiOkResponse({ type: RoleDto, description: 'Role details' })
+  @ApiNotFoundResponse({ description: 'Role not found' })
+  async getRole(@Param('id', ParseUUIDPipe) id: string): Promise<RoleDto> {
+    return this.roleService.getRoleById(id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('system_admin')
+  @Post()
+  @ApiOperation({ summary: 'Create a new role' })
+  @ApiCreatedResponse({ type: RoleDto, description: 'Role created successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid input' })
+  async createRole(@Body() createRoleDto: CreateRoleDto): Promise<RoleDto> {
+    return this.roleService.createRole(createRoleDto);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('system_admin')
+  @Put(':id')
+  @ApiOperation({ summary: 'Update an existing role' })
+  @ApiOkResponse({ type: RoleDto, description: 'Role updated successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid input' })
+  @ApiNotFoundResponse({ description: 'Role not found' })
+  async updateRole(@Param('id', ParseUUIDPipe) id: string, @Body() updateRoleDto: UpdateRoleDto): Promise<RoleDto> {
+    return this.roleService.updateRole(id, updateRoleDto);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('system_admin')
+  @Delete(':id')
+  @ApiOperation({ summary: 'Soft delete a role' })
+  @ApiNoContentResponse({ description: 'Role deleted successfully' })
+  async deleteRole(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.roleService.deleteRole(id);
+  }
+}

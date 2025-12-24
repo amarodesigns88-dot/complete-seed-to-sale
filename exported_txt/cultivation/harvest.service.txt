@@ -1,0 +1,97 @@
+/*
+ * Source: src\cultivation\harvest.service.ts
+ * Exported: 2025-12-23T23:50:13.522Z
+ */
+
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { AuditService } from '../common/audit.service';
+import { v4 as uuidv4 } from 'uuid';
+
+@Injectable()
+export class HarvestService {
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) {}
+
+  /**
+   * Create a harvest record and update the plant to drying/harvested with harvestDate.
+   * All changes are performed in a transaction for consistency.
+   */
+  async createHarvest(
+    plantId: string | null,
+    data: {
+      batchId: string;
+      wetFlowerWeight: number;
+      wetOtherMaterialWeight?: number;
+      wetWasteWeight?: number;
+      harvestType: string;
+      isAdditionalCollection?: boolean;
+      notes?: string | null;
+    },
+    userId?: string,
+  ) {
+    const {
+      batchId,
+      wetFlowerWeight,
+      wetOtherMaterialWeight = 0,
+      wetWasteWeight = 0,
+      harvestType,
+      isAdditionalCollection = false,
+      notes = null,
+    } = data;
+
+    return this.prisma.$transaction(async (tx) => {
+      // Create harvest record
+      const harvest = await tx.harvest.create({
+        data: {
+          id: uuidv4(),
+          plantId: plantId ?? null,
+          batchId,
+          wetFlowerWeight,
+          wetOtherMaterialWeight,
+          wetWasteWeight,
+          harvestType,
+          isAdditionalCollection,
+          notes,
+        },
+      });
+
+      // If plantId provided, update plant: phase -> drying, status -> harvested, set harvestDate
+      if (plantId) {
+        await tx.plant.update({
+          where: { id: plantId },
+          data: {
+            phase: 'drying',
+            status: 'harvested',
+            harvestDate: new Date(),
+          },
+        });
+      }
+
+      // Use AuditService outside transaction to avoid nested transactions
+      if (userId) {
+        await this.auditService.logAction({
+          userId,
+          module: 'cultivation',
+          entityType: 'harvest',
+          entityId: harvest.id,
+          actionType: 'create',
+          details: {
+            plantId,
+            batchId,
+            wetFlowerWeight,
+            wetOtherMaterialWeight,
+            wetWasteWeight,
+            harvestType,
+            isAdditionalCollection,
+            notes,
+          },
+        });
+      }
+
+      return harvest;
+    });
+  }
+}

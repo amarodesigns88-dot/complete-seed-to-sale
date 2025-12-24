@@ -1,0 +1,9 @@
+/*
+ * Source: src\user\dto\update-role.dto.ts
+ * Exported: 2025-12-23T23:50:13.549Z
+ */
+
+import { PartialType } from '@nestjs/swagger';
+import { CreateRoleDto } from './create-role.dto';
+
+export class UpdateRoleDto extends PartialType(CreateRoleDto) {}

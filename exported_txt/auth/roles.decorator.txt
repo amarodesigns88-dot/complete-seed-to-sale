@@ -1,0 +1,8 @@
+/*
+ * Source: src\auth\roles.decorator.ts
+ * Exported: 2025-12-23T23:50:13.496Z
+ */
+
+import { SetMetadata } from '@nestjs/common';
+
+export const Roles = (...roles: string[]) => SetMetadata('roles', roles);

@@ -1,0 +1,43 @@
+/*
+ * Source: src\inventory-type\inventory-type.controller.ts
+ * Exported: 2025-12-23T23:50:13.528Z
+ */
+
+import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException } from '@nestjs/common';
+import { InventoryTypeService } from './inventory-type.service';
+import { CreateInventoryTypeDto } from './dto/create-inventory-type.dto';
+import { UpdateInventoryTypeDto } from './dto/update-inventory-type.dto';
+
+@Controller('inventory-types')
+export class InventoryTypeController {
+  constructor(private readonly inventoryTypeService: InventoryTypeService) {}
+
+  @Get()
+  async findAll() {
+    return this.inventoryTypeService.findAll();
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    const inventoryType = await this.inventoryTypeService.findOne(id);
+    if (!inventoryType) {
+      throw new NotFoundException(`InventoryType with id ${id} not found`);
+    }
+    return inventoryType;
+  }
+
+  @Post()
+  async create(@Body() createDto: CreateInventoryTypeDto) {
+    return this.inventoryTypeService.create(createDto);
+  }
+
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() updateDto: UpdateInventoryTypeDto) {
+    return this.inventoryTypeService.update(id, updateDto);
+  }
+
+  @Delete(':id')
+  async deactivate(@Param('id') id: string) {
+    return this.inventoryTypeService.deactivate(id);
+  }
+}
