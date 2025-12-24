@@ -93,7 +93,6 @@ async function main() {
           create: { 
             name: 'licensee_admin',
             description: 'Licensee Administrator Role',
-            permissions: JSON.stringify(['*']),
           }
         }]
       },
