@@ -85,9 +85,18 @@ async function main() {
       name: 'Test User',
       email: 'testuser@example.com',
       passwordHash,
-      roles: { connect: [{ name: 'licensee_admin' }], },
       parentLocationId: parentLocation.id,
       isActive: true,
+      roles: { 
+        connectOrCreate: [{
+          where: { name: 'licensee_admin' },
+          create: { 
+            name: 'licensee_admin',
+            description: 'Licensee Administrator Role',
+            permissions: JSON.stringify(['*']),
+          }
+        }]
+      },
     },
   });
 
