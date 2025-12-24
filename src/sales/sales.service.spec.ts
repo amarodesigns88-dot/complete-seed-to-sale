@@ -88,7 +88,7 @@ describe('SalesService', () => {
         customer: null,
       };
 
-      mockPrismaService.inventoryItem.findFirst.mockResolvedValue(mockInventoryItem);
+      mockPrismaService.inventoryItem.findMany.mockResolvedValue([mockInventoryItem]);
       mockPrismaService.sale.create.mockResolvedValue(mockSale);
       mockPrismaService.sale.findUnique.mockResolvedValue(mockSale);
       mockPrismaService.saleItem.create.mockResolvedValue({});
@@ -97,12 +97,12 @@ describe('SalesService', () => {
       const result = await service.createSale(locationId, createSaleDto, userId);
 
       expect(result).toBeDefined();
-      expect(mockPrismaService.inventoryItem.findFirst).toHaveBeenCalled();
+      expect(mockPrismaService.inventoryItem.findMany).toHaveBeenCalled();
       expect(mockPrismaService.$transaction).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if inventory item not found', async () => {
-      mockPrismaService.inventoryItem.findFirst.mockResolvedValue(null);
+      mockPrismaService.inventoryItem.findMany.mockResolvedValue([]);
 
       await expect(
         service.createSale(locationId, createSaleDto, userId),
@@ -118,7 +118,7 @@ describe('SalesService', () => {
         deletedAt: null,
       };
 
-      mockPrismaService.inventoryItem.findFirst.mockResolvedValue(mockInventoryItem);
+      mockPrismaService.inventoryItem.findMany.mockResolvedValue([mockInventoryItem]);
 
       await expect(
         service.createSale(locationId, createSaleDto, userId),
