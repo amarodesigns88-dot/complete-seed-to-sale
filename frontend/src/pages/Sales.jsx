@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { salesService } from '../services/api';
 
 function Sales() {
+  const { locationId } = useAuth();
   const [sales, setSales] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -9,7 +11,6 @@ function Sales() {
   const [showPOS, setShowPOS] = useState(false);
   const [cart, setCart] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState('');
-  const locationId = 'demo-location-id';
 
   useEffect(() => {
     loadData();
@@ -18,6 +19,7 @@ function Sales() {
   const loadData = async () => {
     try {
       // Mock data for demonstration
+      // In production, use locationId from context: salesService.getSales(locationId)
       setSales([
         {
           id: '1',
@@ -73,6 +75,10 @@ function Sales() {
   };
 
   const handleCheckout = async () => {
+    if (!locationId) {
+      alert('Please select a location in your profile settings.');
+      return;
+    }
     try {
       await salesService.createSale(locationId, {
         customerId: selectedCustomer || undefined,
@@ -100,6 +106,12 @@ function Sales() {
           {showPOS ? 'View Sales History' : 'Open POS'}
         </button>
       </div>
+
+      {!locationId && (
+        <div className="error-message" style={{ marginBottom: '20px' }}>
+          No location selected. Please select a location in your profile settings.
+        </div>
+      )}
 
       {showPOS ? (
         <div>

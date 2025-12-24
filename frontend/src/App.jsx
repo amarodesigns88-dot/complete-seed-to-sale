@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import Header from './components/Header';
 import PrivateRoute from './components/PrivateRoute';
 import Login from './pages/Login';
@@ -12,30 +13,32 @@ function App() {
   const token = localStorage.getItem('token');
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={token ? <Navigate to="/" /> : <Login />} />
-        
-        <Route
-          path="/*"
-          element={
-            <PrivateRoute>
-              <div>
-                <Header />
-                <div className="container">
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/plants" element={<Plants />} />
-                    <Route path="/sales" element={<Sales />} />
-                    <Route path="*" element={<Navigate to="/" />} />
-                  </Routes>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={token ? <Navigate to="/" /> : <Login />} />
+          
+          <Route
+            path="/*"
+            element={
+              <PrivateRoute>
+                <div>
+                  <Header />
+                  <div className="container">
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/plants" element={<Plants />} />
+                      <Route path="/sales" element={<Sales />} />
+                      <Route path="*" element={<Navigate to="/" />} />
+                    </Routes>
+                  </div>
                 </div>
-              </div>
-            </PrivateRoute>
-          }
-        />
-      </Routes>
-    </Router>
+              </PrivateRoute>
+            }
+          />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

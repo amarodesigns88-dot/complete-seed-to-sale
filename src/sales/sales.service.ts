@@ -13,15 +13,23 @@ export class SalesService {
    */
   async createSale(locationId: string, dto: CreateSaleDto, userId?: string) {
     // Validate all inventory items exist and have sufficient quantity
+    // Fetch all items in a single query for better performance
+    const inventoryItemIds = dto.items.map(item => item.inventoryItemId);
+    const inventoryItems = await this.prisma.inventoryItem.findMany({
+      where: {
+        id: { in: inventoryItemIds },
+        locationId,
+        status: 'active',
+        deletedAt: null,
+      },
+    });
+
+    // Create a map for quick lookup
+    const inventoryMap = new Map(inventoryItems.map(item => [item.id, item]));
+
+    // Validate each item
     for (const item of dto.items) {
-      const inventoryItem = await this.prisma.inventoryItem.findFirst({
-        where: {
-          id: item.inventoryItemId,
-          locationId,
-          status: 'active',
-          deletedAt: null,
-        },
-      });
+      const inventoryItem = inventoryMap.get(item.inventoryItemId);
 
       if (!inventoryItem) {
         throw new NotFoundException(`Inventory item ${item.inventoryItemId} not found`);

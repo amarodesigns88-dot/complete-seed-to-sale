@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { cultivationService } from '../services/api';
 
 function Plants() {
+  const { locationId } = useAuth();
   const [plants, setPlants] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,7 +13,6 @@ function Plants() {
     roomId: '',
     phase: 'vegetative',
   });
-  const locationId = 'demo-location-id'; // In production, get from context/user
 
   useEffect(() => {
     loadData();
@@ -20,6 +21,7 @@ function Plants() {
   const loadData = async () => {
     try {
       // Mock data for demonstration
+      // In production, use locationId from context: cultivationService.getPlants(locationId)
       setPlants([
         {
           id: '1',
@@ -53,6 +55,10 @@ function Plants() {
 
   const handleCreatePlant = async (e) => {
     e.preventDefault();
+    if (!locationId) {
+      alert('Please select a location in your profile settings.');
+      return;
+    }
     try {
       await cultivationService.createPlant(locationId, newPlant);
       setShowCreateForm(false);
@@ -75,6 +81,12 @@ function Plants() {
           {showCreateForm ? 'Cancel' : 'Create Plant'}
         </button>
       </div>
+
+      {!locationId && (
+        <div className="error-message" style={{ marginBottom: '20px' }}>
+          No location selected. Please select a location in your profile settings.
+        </div>
+      )}
 
       {showCreateForm && (
         <div className="card">

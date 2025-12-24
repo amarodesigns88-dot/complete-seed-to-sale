@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
 
 function Login() {
@@ -11,6 +12,7 @@ function Login() {
   const [userId, setUserId] = useState('');
   const [allowedInterfaces, setAllowedInterfaces] = useState([]);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -31,8 +33,11 @@ function Login() {
     
     try {
       const response = await authService.selectInterface(userId, interfaceType, ubi || null);
-      localStorage.setItem('token', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify({ email, interfaceType }));
+      const token = response.data.accessToken;
+      
+      // Use AuthContext to store authentication state
+      login(token, { email, interfaceType }, ubi || null);
+      
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Interface selection failed.');

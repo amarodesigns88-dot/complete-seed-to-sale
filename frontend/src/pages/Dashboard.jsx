@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { cultivationService } from '../services/api';
 
 function Dashboard() {
+  const { locationId } = useAuth();
   const [stats, setStats] = useState({
     totalPlants: 0,
     activeRooms: 0,
@@ -9,7 +11,6 @@ function Dashboard() {
     revenue: 0,
   });
   const [loading, setLoading] = useState(true);
-  const locationId = 'demo-location-id'; // In production, get from context/user
 
   useEffect(() => {
     loadDashboard();
@@ -18,6 +19,7 @@ function Dashboard() {
   const loadDashboard = async () => {
     try {
       // Mock data for demonstration
+      // In production, fetch real data using locationId from context
       setStats({
         totalPlants: 150,
         activeRooms: 8,
@@ -38,6 +40,11 @@ function Dashboard() {
   return (
     <div>
       <h2>Dashboard</h2>
+      {!locationId && (
+        <div className="error-message" style={{ marginBottom: '20px' }}>
+          No location selected. Please select a location in your profile settings.
+        </div>
+      )}
       
       <div className="grid">
         <div className="stat-card">
