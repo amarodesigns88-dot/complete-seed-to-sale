@@ -14,6 +14,7 @@ import { StateUserManagementModule } from './state-user-management/state-user-ma
 import { StateDashboardModule } from './state-dashboard/state-dashboard.module';
 import { StateLicenseeManagementModule } from './state-licensee-management/state-licensee-management.module';
 import { StateReportingModule } from './state-reporting/state-reporting.module';
+import { SystemAdminModule } from './system-admin/system-admin.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { StateReportingModule } from './state-reporting/state-reporting.module';
     StateDashboardModule,
     StateLicenseeManagementModule,
     StateReportingModule,
+    SystemAdminModule,
   ],
   providers: [PrismaService],
 })
