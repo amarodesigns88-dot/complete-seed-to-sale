@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { transferService, inventoryService } from '../services/api';
 
 function Transfers() {
-  const { locationId } = useAuth();
+  const { locationId, userId } = useAuth();
   const [transfers, setTransfers] = useState([]);
   const [pendingTransfers, setPendingTransfers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +57,7 @@ function Transfers() {
     try {
       await transferService.createTransfer(locationId, {
         ...newTransfer,
-        userId: 'current-user-id',
+        userId: userId,
       });
       setShowCreateForm(false);
       setNewTransfer({
@@ -92,7 +92,7 @@ function Transfers() {
     try {
       await transferService.receiveTransfer(locationId, selectedTransfer.id, {
         ...receiveData,
-        userId: 'current-user-id',
+        userId: userId,
       });
       setShowReceiveModal(false);
       setSelectedTransfer(null);

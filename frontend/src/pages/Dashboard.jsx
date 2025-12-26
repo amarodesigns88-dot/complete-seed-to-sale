@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { cultivationService, inventoryService, transferService, salesService } from '../services/api';
+import { cultivationService, inventoryService, transferService, salesService, roomService } from '../services/api';
 
 function Dashboard() {
   const { locationId } = useAuth();
@@ -32,7 +32,7 @@ function Dashboard() {
       // Fetch all data in parallel
       const [plantsRes, roomsRes, inventoryRes, transfersRes, salesRes] = await Promise.all([
         cultivationService.getPlants(locationId).catch(() => ({ data: [] })),
-        cultivationService.getRooms(locationId).catch(() => ({ data: [] })),
+        roomService.getRooms(locationId).catch(() => ({ data: [] })),
         inventoryService.getInventoryItems(locationId).catch(() => ({ data: [] })),
         transferService.getPendingTransfers(locationId).catch(() => ({ data: [] })),
         salesService.getSales(locationId).catch(() => ({ data: [] })),

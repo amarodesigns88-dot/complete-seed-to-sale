@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { conversionService, inventoryService, roomService } from '../services/api';
 
 function Conversions() {
-  const { locationId } = useAuth();
+  const { locationId, userId } = useAuth();
   const [conversions, setConversions] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -55,7 +55,7 @@ function Conversions() {
         sourceInventoryIds: formData.sourceInventoryIds.filter(id => id),
         destinationRoomId: formData.destinationRoomId,
         notes: formData.notes,
-        userId: 'current-user-id',
+        userId: userId,
       };
 
       if (conversionType === 'wetToDry') {

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { inventoryService, roomService } from '../services/api';
 
 function Inventory() {
-  const { locationId } = useAuth();
+  const { locationId, userId } = useAuth();
   const [inventory, setInventory] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ function Inventory() {
     try {
       await inventoryService.moveItemToRoom(locationId, selectedItem.id, {
         newRoomId: operationData.roomId,
-        userId: 'current-user-id', // Should come from auth context
+        userId: userId,
       });
       closeOperation();
       loadData();
@@ -73,7 +73,7 @@ function Inventory() {
       await inventoryService.adjustInventory(locationId, selectedItem.id, {
         adjustmentAmount,
         reason: operationData.reason,
-        userId: 'current-user-id',
+        userId: userId,
       });
       closeOperation();
       loadData();
@@ -93,7 +93,7 @@ function Inventory() {
       
       await inventoryService.splitInventory(locationId, selectedItem.id, {
         splits,
-        userId: 'current-user-id',
+        userId: userId,
       });
       closeOperation();
       loadData();
@@ -112,7 +112,7 @@ function Inventory() {
     try {
       await inventoryService.destroyInventory(locationId, selectedItem.id, {
         reason: operationData.reason,
-        userId: 'current-user-id',
+        userId: userId,
       });
       closeOperation();
       loadData();
