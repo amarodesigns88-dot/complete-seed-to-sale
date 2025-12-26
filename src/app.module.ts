@@ -10,6 +10,7 @@ import { ConversionModule } from './conversion/conversion.module';
 import { TransferModule } from './transfer/transfer.module';
 import { TestingModule } from './testing/testing.module';
 import { LabModule } from './lab/lab.module';
+import { StateUserManagementModule } from './state-user-management/state-user-management.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { LabModule } from './lab/lab.module';
     TransferModule,
     TestingModule,
     LabModule,
+    StateUserManagementModule,
   ],
   providers: [PrismaService],
 })
