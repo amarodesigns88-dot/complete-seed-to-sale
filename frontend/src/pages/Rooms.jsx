@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { roomService } from '../services/api';
 
 function Rooms() {
-  const { locationId } = useAuth();
+  const { locationId, userId } = useAuth();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);

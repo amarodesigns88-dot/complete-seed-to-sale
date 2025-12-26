@@ -8,7 +8,7 @@ import {
 } from '../services/api';
 
 function Reports() {
-  const { locationId } = useAuth();
+  const { locationId, userId } = useAuth();
   const [loading, setLoading] = useState(false);
   const [reportType, setReportType] = useState('inventory');
   const [dateRange, setDateRange] = useState({
