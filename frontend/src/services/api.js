@@ -105,4 +105,22 @@ export const roomService = {
   deleteRoom: (locationId, roomId) => api.delete(`/cultivation/${locationId}/rooms/${roomId}`),
 };
 
+// Conversion services
+export const conversionService = {
+  convertWetToDry: (locationId, data) => api.post(`/conversion/${locationId}/convert/wet-to-dry`, data),
+  convertDryToExtraction: (locationId, data) => api.post(`/conversion/${locationId}/convert/dry-to-extraction`, data),
+  convertExtractionToFinished: (locationId, data) => api.post(`/conversion/${locationId}/convert/extraction-to-finished`, data),
+  getConversions: (locationId, filters) => api.get(`/conversion/${locationId}/conversions`, { params: filters }),
+  getConversion: (locationId, conversionId) => api.get(`/conversion/${locationId}/conversions/${conversionId}`),
+};
+
+// Testing services
+export const testingService = {
+  generateSample: (locationId, data) => api.post(`/testing/${locationId}/samples`, data),
+  assignLab: (locationId, data) => api.post(`/testing/${locationId}/samples/assign`, data),
+  remediate: (locationId, data) => api.post(`/testing/${locationId}/samples/remediate`, data),
+  getSample: (locationId, sampleId) => api.get(`/testing/${locationId}/samples/${sampleId}`),
+  listSamples: (locationId, filters) => api.get(`/testing/${locationId}/samples`, { params: filters }),
+};
+
 export default api;

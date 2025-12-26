@@ -10,6 +10,7 @@ import Sales from './pages/Sales';
 import Inventory from './pages/Inventory';
 import Transfers from './pages/Transfers';
 import Rooms from './pages/Rooms';
+import Conversions from './pages/Conversions';
 import './styles/App.css';
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/plants" element={<Plants />} />
                       <Route path="/inventory" element={<Inventory />} />
+                      <Route path="/conversions" element={<Conversions />} />
                       <Route path="/transfers" element={<Transfers />} />
                       <Route path="/rooms" element={<Rooms />} />
                       <Route path="/sales" element={<Sales />} />

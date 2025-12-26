@@ -20,6 +20,7 @@ function Header() {
             <Link to="/">Dashboard</Link>
             <Link to="/plants">Plants</Link>
             <Link to="/inventory">Inventory</Link>
+            <Link to="/conversions">Conversions</Link>
             <Link to="/transfers">Transfers</Link>
             <Link to="/rooms">Rooms</Link>
             <Link to="/sales">Sales & POS</Link>
