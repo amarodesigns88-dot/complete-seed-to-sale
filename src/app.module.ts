@@ -6,6 +6,7 @@ import { UserModule } from './user/user.module';
 import { CultivationModule } from './cultivation/cultivation.module';
 import { SalesModule } from './sales/sales.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { ConversionModule } from './conversion/conversion.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { InventoryModule } from './inventory/inventory.module';
     CultivationModule,
     SalesModule,
     InventoryModule,
+    ConversionModule,
   ],
   providers: [PrismaService],
 })
