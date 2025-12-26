@@ -8,6 +8,8 @@ import { SalesModule } from './sales/sales.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { ConversionModule } from './conversion/conversion.module';
 import { TransferModule } from './transfer/transfer.module';
+import { TestingModule } from './testing/testing.module';
+import { LabModule } from './lab/lab.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { TransferModule } from './transfer/transfer.module';
     InventoryModule,
     ConversionModule,
     TransferModule,
+    TestingModule,
+    LabModule,
   ],
   providers: [PrismaService],
 })
