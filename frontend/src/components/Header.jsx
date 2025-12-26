@@ -19,7 +19,12 @@ function Header() {
           <nav className="nav">
             <Link to="/">Dashboard</Link>
             <Link to="/plants">Plants</Link>
-            <Link to="/sales">Sales & POS</Link>
+            <Link to="/inventory">Inventory</Link>
+            <Link to="/conversions">Conversions</Link>
+            <Link to="/transfers">Transfers</Link>
+            <Link to="/rooms">Rooms</Link>
+            <Link to="/sales">Sales</Link>
+            <Link to="/reports">Reports</Link>
           </nav>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <span style={{ fontSize: '14px' }}>{user.email}</span>

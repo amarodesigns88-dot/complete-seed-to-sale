@@ -36,7 +36,7 @@ function Login() {
       const token = response.data.accessToken;
       
       // Use AuthContext to store authentication state
-      login(token, { email, interfaceType }, ubi || null);
+      login(token, { email, interfaceType }, userId, ubi || null);
       
       navigate('/');
     } catch (err) {
