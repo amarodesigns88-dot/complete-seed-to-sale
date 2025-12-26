@@ -7,7 +7,7 @@ import {
   ExtractionToFinishedConversionDto,
   ConversionFilterDto,
 } from './dto/conversion.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('conversion')
 @ApiBearerAuth()
