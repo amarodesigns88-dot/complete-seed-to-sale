@@ -5,6 +5,7 @@ import { LicenseeModule } from './licensee/licensee.module';
 import { UserModule } from './user/user.module';
 import { CultivationModule } from './cultivation/cultivation.module';
 import { SalesModule } from './sales/sales.module';
+import { InventoryModule } from './inventory/inventory.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { SalesModule } from './sales/sales.module';
     UserModule,
     CultivationModule,
     SalesModule,
+    InventoryModule,
   ],
   providers: [PrismaService],
 })
