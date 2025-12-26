@@ -1093,6 +1093,347 @@
           "Cultivation � Cure"
         ]
       }
+    },
+    "/sales/{locationId}/sales": {
+      "post": {
+        "operationId": "SalesController_createSale",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSaleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sale created successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new sale transaction",
+        "tags": [
+          "Sales & POS"
+        ]
+      },
+      "get": {
+        "operationId": "SalesController_getSales",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of sales returned"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all sales for a location",
+        "tags": [
+          "Sales & POS"
+        ]
+      }
+    },
+    "/sales/{locationId}/sales/{saleId}": {
+      "get": {
+        "operationId": "SalesController_getSale",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "saleId",
+            "required": true,
+            "in": "path",
+            "description": "Sale UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sale details returned"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a specific sale by ID",
+        "tags": [
+          "Sales & POS"
+        ]
+      }
+    },
+    "/sales/{locationId}/sales/{saleId}/void": {
+      "post": {
+        "operationId": "SalesController_voidSale",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "saleId",
+            "required": true,
+            "in": "path",
+            "description": "Sale UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sale voided successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Void a sale and restore inventory",
+        "tags": [
+          "Sales & POS"
+        ]
+      }
+    },
+    "/sales/{locationId}/refunds": {
+      "post": {
+        "operationId": "SalesController_createRefund",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRefundDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Refund created successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a refund for a sale",
+        "tags": [
+          "Sales & POS"
+        ]
+      }
+    },
+    "/sales/{locationId}/customers": {
+      "post": {
+        "operationId": "SalesController_createCustomer",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer created successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new customer",
+        "tags": [
+          "Sales & POS"
+        ]
+      },
+      "get": {
+        "operationId": "SalesController_getCustomers",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of customers returned"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all customers",
+        "tags": [
+          "Sales & POS"
+        ]
+      }
+    },
+    "/sales/{locationId}/customers/{customerId}": {
+      "get": {
+        "operationId": "SalesController_getCustomer",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "description": "Customer UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer details returned"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a specific customer by ID",
+        "tags": [
+          "Sales & POS"
+        ]
+      }
+    },
+    "/sales/{locationId}/available-inventory": {
+      "get": {
+        "operationId": "SalesController_getAvailableInventory",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "Location UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available inventory items returned"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get available inventory for sale",
+        "tags": [
+          "Sales & POS"
+        ]
+      }
     }
   },
   "info": {
@@ -1610,6 +1951,93 @@
               "notes": "Near intake"
             },
             "additionalProperties": true
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "SaleItemDto": {
+        "type": "object",
+        "properties": {
+          "inventoryItemId": {
+            "type": "string",
+            "description": "Inventory item UUID"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity to sell"
+          },
+          "price": {
+            "type": "number",
+            "description": "Price per unit"
+          },
+          "discountAmount": {
+            "type": "number",
+            "description": "Discount amount",
+            "default": 0
+          }
+        },
+        "required": [
+          "inventoryItemId",
+          "quantity",
+          "price"
+        ]
+      },
+      "CreateSaleDto": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "Customer UUID (optional)"
+          },
+          "items": {
+            "description": "Items to sell",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SaleItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CreateRefundDto": {
+        "type": "object",
+        "properties": {
+          "saleId": {
+            "type": "string",
+            "description": "Sale UUID to refund"
+          },
+          "refundAmount": {
+            "type": "number",
+            "description": "Refund amount"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for refund"
+          }
+        },
+        "required": [
+          "saleId",
+          "refundAmount"
+        ]
+      },
+      "CreateCustomerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Customer name"
+          },
+          "patientCardNumber": {
+            "type": "string",
+            "description": "Patient card number (if medical)"
+          },
+          "contactInfo": {
+            "type": "object",
+            "description": "Contact information (email, phone, etc.)"
           }
         },
         "required": [

@@ -10,29 +10,25 @@ datasource db {
 model User {
   id               String           @id @default(uuid())
   parentLocationId String?
-  parentLocation   Location?        @relation("UserParentLocation", fields: [parentLocationId], references: [id])
-  permissions      UserPermission[]
   name             String
   email            String           @unique
   phone            String?
   passwordHash     String
   status           String           @default("active")
   isActive         Boolean          @default(true)
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  // many-to-many relations (explicit relation names)
-  roles     Role[]     @relation("UserRoles")
-  locations Location[] @relation("UserLocations")
-
-  Transfers   Transfer[]   @relation("UserTransfers")
-  Conversions Conversion[]
-  Sales       Sale[]
-  Refunds     Refund[]
-  RoomMoves   RoomMove[]
-  AuditLogs   AuditLog[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+  AuditLogs        AuditLog[]
+  Conversions      Conversion[]
+  Refunds          Refund[]
+  RoomMoves        RoomMove[]
+  Sales            Sale[]
+  Transfers        Transfer[]       @relation("UserTransfers")
+  parentLocation   Location?        @relation("UserParentLocation", fields: [parentLocationId], references: [id])
+  permissions      UserPermission[]
+  locations        Location[]       @relation("UserLocations")
+  roles            Role[]           @relation("UserRoles")
 }
 
 model Role {
@@ -41,278 +37,251 @@ model Role {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  // opposite side of the many-to-many relation with User
-  users User[] @relation("UserRoles")
+  users       User[]   @relation("UserRoles")
 }
 
 model UserPermission {
   id         String   @id @default(uuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id])
   locationId String
-  modules    Json     @default("[]") // allowed modules as JSON array
+  modules    Json     @default("[]")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([locationId])
 }
 
 model Location {
-  id               String     @id @default(uuid())
-  parentLocationId String?
-  parentLocation   Location?  @relation("LocationToLocation", fields: [parentLocationId], references: [id])
-  childLocations   Location[] @relation("LocationToLocation")
-  ubi              String?    @unique
-  licenseNumber    String?    @unique
-  name             String
-  licenseType      String
-  enabledModules   Json       @default("[]")
-  address          String?
-  status           String     @default("active")
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  deletedAt        DateTime?
-
-  // back-relation for users whose parentLocationId points to this Location
-  parentUsers User[] @relation("UserParentLocation")
-
-  // many-to-many for users (explicit relation name)
-  users User[] @relation("UserLocations")
-
+  id                String          @id @default(uuid())
+  parentLocationId  String?
+  ubi               String?         @unique
+  licenseNumber     String?         @unique
+  name              String
+  licenseType       String
+  enabledModules    Json            @default("[]")
+  address           String?
+  status            String          @default("active")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?
+  InventoryItems    InventoryItem[] @relation("LocationInventoryItems")
+  parentLocation    Location?       @relation("LocationToLocation", fields: [parentLocationId], references: [id])
+  childLocations    Location[]      @relation("LocationToLocation")
   Plants            Plant[]         @relation("LocationPlants")
   Rooms             Room[]          @relation("LocationRooms")
-  InventoryItems    InventoryItem[] @relation("LocationInventoryItems")
-  TransfersSent     Transfer[]      @relation("SenderTransfers")
   TransfersReceived Transfer[]      @relation("ReceiverTransfers")
+  TransfersSent     Transfer[]      @relation("SenderTransfers")
+  parentUsers       User[]          @relation("UserParentLocation")
+  users             User[]          @relation("UserLocations")
 }
 
 model Plant {
-  id            String    @id @default(uuid())
-  locationId    String
-  location      Location  @relation("LocationPlants", fields: [locationId], references: [id])
-  parentPlantId String?
-  parentPlant   Plant?    @relation("PlantToPlant", fields: [parentPlantId], references: [id])
-  childPlants   Plant[]   @relation("PlantToPlant")
-  strain        String
-  roomId        String? // FK to Room
-  room          Room?     @relation("RoomPlants", fields: [roomId], references: [id])
-  phase         String
-  barcode       String    @unique
-  status        String    @default("active")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
-  harvestDate   DateTime?
-
-  // optional link to source inventory item used to create this plant
-  sourceInventoryId String?
-  sourceInventory   InventoryItem? @relation("InventoryToPlantSource", fields: [sourceInventoryId], references: [id])
-
-  // inventory items harvested from this plant
+  id                 String          @id @default(uuid())
+  locationId         String
+  parentPlantId      String?
+  strain             String
+  roomId             String?
+  phase              String
+  barcode            String          @unique
+  status             String          @default("active")
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  deletedAt          DateTime?
+  harvestDate        DateTime?
+  sourceInventoryId  String?
+  Cures              Cure[]          @relation("PlantCures")
+  Destructions       Destruction[]
+  Harvests           Harvest[]       @relation("PlantHarvests")
   harvestedInventory InventoryItem[] @relation("HarvestedPlant")
-
-  Harvests     Harvest[]     @relation("PlantHarvests")
-  Cures        Cure[]        @relation("PlantCures")
-  Destructions Destruction[]
-  RoomMoves    RoomMove[]
+  location           Location        @relation("LocationPlants", fields: [locationId], references: [id])
+  parentPlant        Plant?          @relation("PlantToPlant", fields: [parentPlantId], references: [id])
+  childPlants        Plant[]         @relation("PlantToPlant")
+  room               Room?           @relation("RoomPlants", fields: [roomId], references: [id])
+  sourceInventory    InventoryItem?  @relation("InventoryToPlantSource", fields: [sourceInventoryId], references: [id])
+  RoomMoves          RoomMove[]
 }
 
 model InventoryType {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  category    String // Source, Waste, Wet, Dry, Lot, Extraction, FinishedGoods
-  unit        String // e.g., "units", "grams", "kg", "lbs", "ml", "oz", "each"
-  isSource    Boolean  @default(false) // true if source inventory type (clone, seed)
-  isWaste     Boolean  @default(false) // true if waste type (logging only, must be destroyed)
-  canConvert  Boolean  @default(true) // false for waste type
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
-
-  // Opposite relation to inventory items
+  id             String          @id @default(uuid())
+  name           String          @unique
+  description    String?
+  category       String
+  unit           String
+  isSource       Boolean         @default(false)
+  isWaste        Boolean         @default(false)
+  canConvert     Boolean         @default(true)
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
   inventoryItems InventoryItem[] @relation("InventoryTypeToItems")
 }
 
 model InventoryItem {
-  id                String          @id @default(uuid())
+  id                String             @id @default(uuid())
   locationId        String
-  location          Location        @relation("LocationInventoryItems", fields: [locationId], references: [id])
   parentInventoryId String?
-  parentInventory   InventoryItem?  @relation("InventoryParentChild", fields: [parentInventoryId], references: [id])
-  childInventories  InventoryItem[] @relation("InventoryParentChild")
-
-  harvestedPlantId String?
-  harvestedPlant   Plant?  @relation("HarvestedPlant", fields: [harvestedPlantId], references: [id])
-
-  harvestId String?
-  harvest   Harvest? @relation("HarvestInventoryItems", fields: [harvestId], references: [id])
-
+  harvestedPlantId  String?
+  harvestId         String?
   inventoryTypeId   String?
-  inventoryType     InventoryType? @relation("InventoryTypeToItems", fields: [inventoryTypeId], references: [id])
   inventoryTypeName String?
   productName       String
   quantity          Float
   unit              String
-  usableWeight      Float? // For finished goods - weight that deducts from patient allotment
-  lotId             String? // For items that are part of a lot
-  sublotIdentifier  String? // For split inventory tracking (parent-child relationship)
-  roomId            String? // Current room location for inventory
-  barcode           String         @unique
-  status            String         @default("active")
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  usableWeight      Float?
+  lotId             String?
+  sublotIdentifier  String?
+  roomId            String?
+  barcode           String             @unique
+  status            String             @default("active")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   deletedAt         DateTime?
-
-  sourcePlants Plant[] @relation("InventoryToPlantSource")
-
-  TransferItems TransferItem[] @relation("InventoryTransferItems")
-  SaleItems     SaleItem[]     @relation("InventorySaleItems")
-  Destructions  Destruction[]  @relation("InventoryDestructions")
-  RoomMoves     RoomMove[]     @relation("InventoryRoomMoves")
-
   conversionInputs  ConversionInput[]  @relation("InventoryConversionInputs")
   conversionOutputs ConversionOutput[] @relation("InventoryConversionOutputs")
-
-  tests Test[] @relation("InventoryTests")
+  Destructions      Destruction[]      @relation("InventoryDestructions")
+  harvest           Harvest?           @relation("HarvestInventoryItems", fields: [harvestId], references: [id])
+  harvestedPlant    Plant?             @relation("HarvestedPlant", fields: [harvestedPlantId], references: [id])
+  inventoryType     InventoryType?     @relation("InventoryTypeToItems", fields: [inventoryTypeId], references: [id])
+  location          Location           @relation("LocationInventoryItems", fields: [locationId], references: [id])
+  parentInventory   InventoryItem?     @relation("InventoryParentChild", fields: [parentInventoryId], references: [id])
+  childInventories  InventoryItem[]    @relation("InventoryParentChild")
+  sourcePlants      Plant[]            @relation("InventoryToPlantSource")
+  RoomMoves         RoomMove[]         @relation("InventoryRoomMoves")
+  SaleItems         SaleItem[]         @relation("InventorySaleItems")
+  tests             Test[]             @relation("InventoryTests")
+  TransferItems     TransferItem[]     @relation("InventoryTransferItems")
 
   @@index([harvestId])
   @@index([harvestedPlantId])
 }
 
 model Harvest {
-  id                     String    @id @default(uuid())
+  id                     String          @id @default(uuid())
   plantId                String?
-  plant                  Plant?    @relation("PlantHarvests", fields: [plantId], references: [id])
   batchId                String
   wetFlowerWeight        Float
   wetOtherMaterialWeight Float?
   wetWasteWeight         Float?
   harvestType            String
-  isAdditionalCollection Boolean   @default(false)
-  status                 String    @default("active")
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  isAdditionalCollection Boolean         @default(false)
+  status                 String          @default("active")
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
   deletedAt              DateTime?
   notes                  String?
-
-  Cures          Cure[]          @relation("HarvestCures")
-  inventoryItems InventoryItem[] @relation("HarvestInventoryItems")
+  Cures                  Cure[]          @relation("HarvestCures")
+  plant                  Plant?          @relation("PlantHarvests", fields: [plantId], references: [id])
+  inventoryItems         InventoryItem[] @relation("HarvestInventoryItems")
 }
 
 model Cure {
   id                     String   @id @default(uuid())
   plantId                String
-  plant                  Plant    @relation("PlantCures", fields: [plantId], references: [id])
   harvestId              String
-  harvest                Harvest  @relation("HarvestCures", fields: [harvestId], references: [id])
   dryFlowerWeight        Float
   dryOtherMaterialWeight Float
   dryWasteWeight         Float
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+  harvest                Harvest  @relation("HarvestCures", fields: [harvestId], references: [id])
+  plant                  Plant    @relation("PlantCures", fields: [plantId], references: [id])
 }
 
 model Destruction {
   id                String         @id @default(uuid())
   plantId           String?
-  plant             Plant?         @relation(fields: [plantId], references: [id])
   inventoryItemId   String?
-  inventoryItem     InventoryItem? @relation("InventoryDestructions", fields: [inventoryItemId], references: [id])
   destructionReason String
   wasteWeight       Float
   status            String         @default("active")
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   deletedAt         DateTime?
+  inventoryItem     InventoryItem? @relation("InventoryDestructions", fields: [inventoryItemId], references: [id])
+  plant             Plant?         @relation(fields: [plantId], references: [id])
 }
 
 model RoomMove {
   id              String         @id @default(uuid())
   plantId         String?
-  plant           Plant?         @relation(fields: [plantId], references: [id])
   inventoryItemId String?
+  fromRoomId      String?
+  toRoomId        String?
+  moveDate        DateTime       @default(now())
+  userId          String?
+  status          String         @default("active")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+  fromRoom        Room?          @relation("RoomMoveFromRoom", fields: [fromRoomId], references: [id])
   inventoryItem   InventoryItem? @relation("InventoryRoomMoves", fields: [inventoryItemId], references: [id])
-
-  fromRoomId String?
-  fromRoom   Room?   @relation("RoomMoveFromRoom", fields: [fromRoomId], references: [id])
-
-  toRoomId String?
-  toRoom   Room?   @relation("RoomMoveToRoom", fields: [toRoomId], references: [id])
-
-  moveDate  DateTime  @default(now())
-  userId    String?
-  user      User?     @relation(fields: [userId], references: [id])
-  status    String    @default("active")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  plant           Plant?         @relation(fields: [plantId], references: [id])
+  toRoom          Room?          @relation("RoomMoveToRoom", fields: [toRoomId], references: [id])
+  user            User?          @relation(fields: [userId], references: [id])
 }
 
 model Transfer {
-  id                 String    @id @default(uuid())
+  id                 String         @id @default(uuid())
   senderLocationId   String
-  senderLocation     Location  @relation("SenderTransfers", fields: [senderLocationId], references: [id])
   receiverLocationId String
-  receiverLocation   Location  @relation("ReceiverTransfers", fields: [receiverLocationId], references: [id])
   userId             String
-  user               User      @relation("UserTransfers", fields: [userId], references: [id])
-  manifestNumber     String    @unique
-  status             String    @default("pending")
+  manifestNumber     String         @unique
+  status             String         @default("pending")
   voidedAt           DateTime?
   voidReason         String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
   deletedAt          DateTime?
-
-  transferItems TransferItem[] @relation("TransferItems")
+  receiverLocation   Location       @relation("ReceiverTransfers", fields: [receiverLocationId], references: [id])
+  senderLocation     Location       @relation("SenderTransfers", fields: [senderLocationId], references: [id])
+  user               User           @relation("UserTransfers", fields: [userId], references: [id])
+  transferItems      TransferItem[] @relation("TransferItems")
 }
 
 model TransferItem {
   id              String        @id @default(uuid())
   transferId      String
-  transfer        Transfer      @relation("TransferItems", fields: [transferId], references: [id])
   inventoryItemId String
-  inventoryItem   InventoryItem @relation("InventoryTransferItems", fields: [inventoryItemId], references: [id])
   quantity        Float
   status          String        @default("pending")
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  inventoryItem   InventoryItem @relation("InventoryTransferItems", fields: [inventoryItemId], references: [id])
+  transfer        Transfer      @relation("TransferItems", fields: [transferId], references: [id])
 }
 
 model Conversion {
-  id             String    @id @default(uuid())
+  id             String             @id @default(uuid())
   userId         String?
-  user           User?     @relation(fields: [userId], references: [id])
   conversionType String
-  status         String    @default("active")
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  status         String             @default("active")
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   deletedAt      DateTime?
-
-  inputs  ConversionInput[]  @relation("ConversionInputs")
-  outputs ConversionOutput[] @relation("ConversionOutputs")
+  user           User?              @relation(fields: [userId], references: [id])
+  inputs         ConversionInput[]  @relation("ConversionInputs")
+  outputs        ConversionOutput[] @relation("ConversionOutputs")
 }
 
 model ConversionInput {
   id              String        @id @default(uuid())
   conversionId    String
-  conversion      Conversion    @relation("ConversionInputs", fields: [conversionId], references: [id])
   inventoryItemId String
-  inventoryItem   InventoryItem @relation("InventoryConversionInputs", fields: [inventoryItemId], references: [id])
   quantity        Float
+  conversion      Conversion    @relation("ConversionInputs", fields: [conversionId], references: [id])
+  inventoryItem   InventoryItem @relation("InventoryConversionInputs", fields: [inventoryItemId], references: [id])
 }
 
 model ConversionOutput {
   id              String        @id @default(uuid())
   conversionId    String
-  conversion      Conversion    @relation("ConversionOutputs", fields: [conversionId], references: [id])
   inventoryItemId String
-  inventoryItem   InventoryItem @relation("InventoryConversionOutputs", fields: [inventoryItemId], references: [id])
   quantity        Float
+  conversion      Conversion    @relation("ConversionOutputs", fields: [conversionId], references: [id])
+  inventoryItem   InventoryItem @relation("InventoryConversionOutputs", fields: [inventoryItemId], references: [id])
 }
 
 model TestingPanel {
@@ -322,22 +291,21 @@ model TestingPanel {
   tests         Json
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
-  testsRelation Test[] @relation("PanelTests")
+  testsRelation Test[]   @relation("PanelTests")
 }
 
 model Test {
   id              String         @id @default(uuid())
   inventoryItemId String?
-  inventoryItem   InventoryItem? @relation("InventoryTests", fields: [inventoryItemId], references: [id])
   panelId         String?
-  panel           TestingPanel?  @relation("PanelTests", fields: [panelId], references: [id])
   result          Json?
   status          String         @default("pending")
   voidedAt        DateTime?
   voidReason      String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  inventoryItem   InventoryItem? @relation("InventoryTests", fields: [inventoryItemId], references: [id])
+  panel           TestingPanel?  @relation("PanelTests", fields: [panelId], references: [id])
 }
 
 model Customer {
@@ -347,80 +315,76 @@ model Customer {
   contactInfo       Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-
-  sales Sale[]
+  sales             Sale[]
 }
 
 model Sale {
-  id          String    @id @default(uuid())
+  id          String     @id @default(uuid())
   customerId  String?
-  customer    Customer? @relation(fields: [customerId], references: [id])
   userId      String?
-  user        User?     @relation(fields: [userId], references: [id])
   totalAmount Float
-  status      String    @default("completed")
+  status      String     @default("completed")
   voidedAt    DateTime?
   voidReason  String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  saleItems SaleItem[]
-  refunds   Refund[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  refunds     Refund[]
+  customer    Customer?  @relation(fields: [customerId], references: [id])
+  user        User?      @relation(fields: [userId], references: [id])
+  saleItems   SaleItem[]
 }
 
 model SaleItem {
   id              String        @id @default(uuid())
   saleId          String
-  sale            Sale          @relation(fields: [saleId], references: [id])
   inventoryItemId String
-  inventoryItem   InventoryItem @relation("InventorySaleItems", fields: [inventoryItemId], references: [id])
   quantity        Float
   price           Float
   discountAmount  Float         @default(0)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  inventoryItem   InventoryItem @relation("InventorySaleItems", fields: [inventoryItemId], references: [id])
+  sale            Sale          @relation(fields: [saleId], references: [id])
 }
 
 model Refund {
   id           String   @id @default(uuid())
   saleId       String
-  sale         Sale     @relation(fields: [saleId], references: [id])
   userId       String?
-  user         User?    @relation(fields: [userId], references: [id])
   refundAmount Float
   reason       String?
   createdAt    DateTime @default(now())
+  sale         Sale     @relation(fields: [saleId], references: [id])
+  user         User?    @relation(fields: [userId], references: [id])
 }
 
 model AuditLog {
   id         String   @id @default(uuid())
   userId     String?
-  user       User?    @relation(fields: [userId], references: [id])
   module     String
   entityType String
   entityId   String
   actionType String
   details    Json?
   createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
 }
 
 model Room {
-  id         String    @id @default(uuid())
-  locationId String
-  location   Location  @relation("LocationRooms", fields: [locationId], references: [id])
-  name       String
-  roomType   String    @default("cultivation")
-  status     String    @default("active")
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
-
-  createdBy String? // optional userId who created
-  updatedBy String? // optional userId who updated
-  deletedBy String? // optional userId who deleted
-  metadata  Json? // optional JSON metadata
-
+  id            String     @id @default(uuid())
+  locationId    String
+  name          String
+  roomType      String     @default("cultivation")
+  status        String     @default("active")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+  createdBy     String?
+  updatedBy     String?
+  deletedBy     String?
+  metadata      Json?
   plants        Plant[]    @relation("RoomPlants")
+  location      Location   @relation("LocationRooms", fields: [locationId], references: [id])
   roomMovesFrom RoomMove[] @relation("RoomMoveFromRoom")
   roomMovesTo   RoomMove[] @relation("RoomMoveToRoom")
 
@@ -428,11 +392,9 @@ model Room {
   @@index([locationId])
 }
 
-// New models for complete system implementation
-
 model LicenseType {
   id          String    @id @default(uuid())
-  name        String    @unique // Cultivator, Manufacturer, Retail, Lab, etc.
+  name        String    @unique
   description String?
   canTransfer Boolean   @default(true)
   createdAt   DateTime  @default(now())
@@ -444,63 +406,59 @@ model Lot {
   id                 String    @id @default(uuid())
   locationId         String
   batchNumber        String    @unique
-  inventoryTypeId    String // Type of lot (Lot of Wet Flower, Lot of Dry Flower, Lot of Trim)
+  inventoryTypeId    String
   totalQuantity      Float
-  unit               String // lbs or kg
+  unit               String
   status             String    @default("active")
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   deletedAt          DateTime?
-  
-  // Source inventory items that make up this lot
-  sourceInventoryIds Json? // Array of inventory item IDs used to create this lot
+  sourceInventoryIds Json?
 }
 
 model Product {
-  id                String    @id @default(uuid())
-  locationId        String
-  name              String
-  inventoryItemId   String? // Link to finished goods inventory
-  category          String? // Product category for retail
-  price             Float
-  discountPrice     Float?
-  loyaltyPoints     Int       @default(0)
-  isActive          Boolean   @default(true)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  deletedAt         DateTime?
-  
+  id              String    @id @default(uuid())
+  locationId      String
+  name            String
+  inventoryItemId String?
+  category        String?
+  price           Float
+  discountPrice   Float?
+  loyaltyPoints   Int       @default(0)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
   @@index([locationId])
 }
 
 model Driver {
-  id             String    @id @default(uuid())
-  locationId     String
-  name           String
-  licenseNumber  String
-  status         String    @default("active")
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  deletedAt      DateTime?
-  
-  transfers TransferDriver[]
-  
+  id            String           @id @default(uuid())
+  locationId    String
+  name          String
+  licenseNumber String
+  status        String           @default("active")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  deletedAt     DateTime?
+  transfers     TransferDriver[]
+
   @@index([locationId])
 }
 
 model Vehicle {
-  id              String    @id @default(uuid())
-  locationId      String
-  make            String
-  model           String
-  licensePlate    String
-  status          String    @default("active")
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
-  
-  transfers TransferVehicle[]
-  
+  id           String            @id @default(uuid())
+  locationId   String
+  make         String
+  model        String
+  licensePlate String
+  status       String            @default("active")
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
+  transfers    TransferVehicle[]
+
   @@index([locationId])
 }
 
@@ -508,9 +466,9 @@ model TransferDriver {
   id         String   @id @default(uuid())
   transferId String
   driverId   String
-  driver     Driver   @relation(fields: [driverId], references: [id])
   createdAt  DateTime @default(now())
-  
+  driver     Driver   @relation(fields: [driverId], references: [id])
+
   @@index([transferId])
 }
 
@@ -518,63 +476,62 @@ model TransferVehicle {
   id         String   @id @default(uuid())
   transferId String
   vehicleId  String
-  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id])
   createdAt  DateTime @default(now())
-  
+  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id])
+
   @@index([transferId])
 }
 
 model Sample {
-  id                String    @id @default(uuid())
-  inventoryItemId   String // Inventory item sample was extracted from
-  labLocationId     String? // Lab assigned to test
-  sampleBarcode     String    @unique
-  panelId           String? // TestingPanel assigned
+  id                String       @id @default(uuid())
+  inventoryItemId   String
+  labLocationId     String?
+  sampleBarcode     String       @unique
+  panelId           String?
   quantity          Float
   unit              String
-  status            String    @default("pending") // pending, sent_to_lab, testing, completed, voided
+  status            String       @default("pending")
   voidedAt          DateTime?
   voidReason        String?
-  remediationStatus String? // For failed tests - pending_state_approval, approved, rejected
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  remediationStatus String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
   deletedAt         DateTime?
-  
-  testResults TestResult[]
-  
+  testResults       TestResult[]
+
   @@index([inventoryItemId])
   @@index([labLocationId])
 }
 
 model TestResult {
-  id              String    @id @default(uuid())
-  sampleId        String
-  sample          Sample    @relation(fields: [sampleId], references: [id])
-  testName        String
-  result          Json // Test result data
-  pass            Boolean
-  coaUrl          String? // URL to Certificate of Analysis
-  testedBy        String? // Lab technician
-  testedAt        DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  id        String    @id @default(uuid())
+  sampleId  String
+  testName  String
+  result    Json
+  pass      Boolean
+  coaUrl    String?
+  testedBy  String?
+  testedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  sample    Sample    @relation(fields: [sampleId], references: [id])
+
   @@index([sampleId])
 }
 
 model StateRequest {
-  id              String    @id @default(uuid())
-  locationId      String // Licensee requesting
-  requestType     String // remediation, etc.
-  sampleId        String? // For remediation requests
-  description     String
-  status          String    @default("pending") // pending, approved, rejected
-  reviewedBy      String? // State user ID
-  reviewedAt      DateTime?
-  reviewNotes     String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  id          String    @id @default(uuid())
+  locationId  String
+  requestType String
+  sampleId    String?
+  description String
+  status      String    @default("pending")
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  reviewNotes String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   @@index([locationId])
   @@index([status])
 }
@@ -582,36 +539,36 @@ model StateRequest {
 model InventoryAdjustment {
   id              String    @id @default(uuid())
   inventoryItemId String
-  adjustmentType  String // increase, decrease
+  adjustmentType  String
   quantity        Float
   reason          String
-  isRedFlagged    Boolean   @default(false) // Warning for unusual adjustments
+  isRedFlagged    Boolean   @default(false)
   createdBy       String
   createdAt       DateTime  @default(now())
   deletedAt       DateTime?
-  
+
   @@index([inventoryItemId])
 }
 
 model InventorySplit {
-  id                  String    @id @default(uuid())
-  parentInventoryId   String // Original inventory item
-  childInventoryIds   Json // Array of created child inventory IDs
-  splitReason         String?
-  createdBy           String
-  createdAt           DateTime  @default(now())
-  deletedAt           DateTime?
-  
+  id                String    @id @default(uuid())
+  parentInventoryId String
+  childInventoryIds Json
+  splitReason       String?
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  deletedAt         DateTime?
+
   @@index([parentInventoryId])
 }
 
 model InventoryCombination {
-  id                   String    @id @default(uuid())
-  sourceInventoryIds   Json // Array of source inventory item IDs combined
-  targetInventoryId    String? // Existing inventory if combining into existing
-  newInventoryId       String? // New inventory if creating new item
-  combinationType      String // into_existing, create_new
-  createdBy            String
-  createdAt            DateTime  @default(now())
-  deletedAt            DateTime?
+  id                 String    @id @default(uuid())
+  sourceInventoryIds Json
+  targetInventoryId  String?
+  newInventoryId     String?
+  combinationType    String
+  createdBy          String
+  createdAt          DateTime  @default(now())
+  deletedAt          DateTime?
 }
