@@ -11,6 +11,7 @@ import Inventory from './pages/Inventory';
 import Transfers from './pages/Transfers';
 import Rooms from './pages/Rooms';
 import Conversions from './pages/Conversions';
+import Reports from './pages/Reports';
 import './styles/App.css';
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
                       <Route path="/transfers" element={<Transfers />} />
                       <Route path="/rooms" element={<Rooms />} />
                       <Route path="/sales" element={<Sales />} />
+                      <Route path="/reports" element={<Reports />} />
                       <Route path="*" element={<Navigate to="/" />} />
                     </Routes>
                   </div>
