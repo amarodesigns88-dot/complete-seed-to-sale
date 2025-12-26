@@ -19,6 +19,9 @@ function Header() {
           <nav className="nav">
             <Link to="/">Dashboard</Link>
             <Link to="/plants">Plants</Link>
+            <Link to="/inventory">Inventory</Link>
+            <Link to="/transfers">Transfers</Link>
+            <Link to="/rooms">Rooms</Link>
             <Link to="/sales">Sales & POS</Link>
           </nav>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>

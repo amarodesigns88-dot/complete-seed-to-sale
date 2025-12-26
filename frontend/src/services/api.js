@@ -71,4 +71,38 @@ export const userService = {
   createUser: (data) => api.post('/users', data),
 };
 
+// Inventory services
+export const inventoryService = {
+  getInventoryItems: (locationId) => api.get(`/inventory/${locationId}/items`),
+  getInventoryItem: (locationId, itemId) => api.get(`/inventory/${locationId}/items/${itemId}`),
+  moveItemToRoom: (locationId, itemId, data) => api.post(`/inventory/${locationId}/items/${itemId}/move-room`, data),
+  adjustInventory: (locationId, itemId, data) => api.post(`/inventory/${locationId}/items/${itemId}/adjust`, data),
+  splitInventory: (locationId, itemId, data) => api.post(`/inventory/${locationId}/items/${itemId}/split`, data),
+  combineInventory: (locationId, data) => api.post(`/inventory/${locationId}/items/combine`, data),
+  createLot: (locationId, data) => api.post(`/inventory/${locationId}/lots/create`, data),
+  destroyInventory: (locationId, itemId, data) => api.post(`/inventory/${locationId}/items/${itemId}/destroy`, data),
+  getAdjustments: (locationId) => api.get(`/inventory/${locationId}/adjustments`),
+  getSplits: (locationId) => api.get(`/inventory/${locationId}/splits`),
+  getCombinations: (locationId) => api.get(`/inventory/${locationId}/combinations`),
+};
+
+// Transfer services
+export const transferService = {
+  getTransfers: (locationId, filters) => api.get(`/transfer/${locationId}/transfers`, { params: filters }),
+  getTransfer: (locationId, transferId) => api.get(`/transfer/${locationId}/transfers/${transferId}`),
+  createTransfer: (locationId, data) => api.post(`/transfer/${locationId}/transfers`, data),
+  getPendingTransfers: (locationId) => api.get(`/transfer/${locationId}/transfers/pending`),
+  receiveTransfer: (locationId, transferId, data) => api.post(`/transfer/${locationId}/transfers/${transferId}/receive`, data),
+  voidTransfer: (locationId, transferId, reason) => api.post(`/transfer/${locationId}/transfers/${transferId}/void`, { reason }),
+};
+
+// Room services
+export const roomService = {
+  getRooms: (locationId) => api.get(`/cultivation/${locationId}/rooms`),
+  getRoom: (locationId, roomId) => api.get(`/cultivation/${locationId}/rooms/${roomId}`),
+  createRoom: (locationId, data) => api.post(`/cultivation/${locationId}/rooms`, data),
+  updateRoom: (locationId, roomId, data) => api.put(`/cultivation/${locationId}/rooms/${roomId}`, data),
+  deleteRoom: (locationId, roomId) => api.delete(`/cultivation/${locationId}/rooms/${roomId}`),
+};
+
 export default api;
