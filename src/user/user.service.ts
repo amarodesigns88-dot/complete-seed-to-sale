@@ -234,4 +234,141 @@ export class UserService {
       data: { passwordHash: newHash },
     });
   }
+
+  // Add role to user
+  async addRoleToUser(userId: string, roleId: string): Promise<UserDto> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        roles: {
+          connect: { id: roleId },
+        },
+      },
+      include: this.userInclude(),
+    });
+    return this.toUserDto(user as any);
+  }
+
+  // Remove role from user
+  async removeRoleFromUser(userId: string, roleId: string): Promise<UserDto> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        roles: {
+          disconnect: { id: roleId },
+        },
+      },
+      include: this.userInclude(),
+    });
+    return this.toUserDto(user as any);
+  }
+
+  // Get user permissions
+  async getUserPermissions(userId: string): Promise<any> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        roles: true,
+        permissions: {
+          include: {
+            user: false,
+          },
+        },
+      },
+    });
+
+    if (!user || user.deletedAt) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Aggregate permissions from all user permissions
+    const allModules = new Set<string>();
+    for (const perm of user.permissions) {
+      const modules = Array.isArray(perm.modules) ? perm.modules : JSON.parse(perm.modules || '[]');
+      modules.forEach((m: string) => allModules.add(m));
+    }
+
+    // Build permission map based on roles and modules
+    const permissions: Record<string, boolean> = {
+      canCreatePlants: allModules.has('cultivation'),
+      canEditInventory: allModules.has('inventory'),
+      canViewReports: allModules.has('reporting'),
+      canManageUsers: user.roles.some((r) => r.name === 'system_admin'),
+      canManageSales: allModules.has('sales'),
+      canManageTransfers: allModules.has('transfers'),
+    };
+
+    return {
+      userId: user.id,
+      permissions,
+      roles: user.roles.map((r) => r.name),
+      modules: Array.from(allModules),
+    };
+  }
+
+  // Set accessible UBIs for user
+  async setAccessibleUbis(userId: string, ubis: string[]): Promise<UserDto> {
+    // Find locations matching the UBIs
+    const locations = await this.prisma.location.findMany({
+      where: {
+        ubi: { in: ubis },
+        deletedAt: null,
+      },
+    });
+
+    if (locations.length !== ubis.length) {
+      throw new BadRequestException('One or more UBIs not found');
+    }
+
+    // Update user's locations
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        locations: {
+          set: locations.map((l) => ({ id: l.id })),
+        },
+      },
+      include: this.userInclude(),
+    });
+
+    return this.toUserDto(user as any);
+  }
+
+  // Get users by type
+  async getUsersByType(userType: 'Admin' | 'State' | 'Licensee', filters: ListFilters = {}) {
+    const { page = 1, perPage = 25 } = filters;
+    const sanitizedPage = Math.max(1, Math.floor(page));
+    const sanitizedPerPage = Math.min(200, Math.max(1, Math.floor(perPage)));
+
+    // Map user type to role names
+    let roleFilter: string | undefined;
+    if (userType === 'Admin') {
+      roleFilter = 'system_admin';
+    } else if (userType === 'State') {
+      roleFilter = 'state_user';
+    } else {
+      roleFilter = 'licensee_user';
+    }
+
+    const where: Prisma.UserWhereInput = {
+      deletedAt: null,
+      roles: { some: { name: roleFilter } },
+    };
+
+    const total = await this.prisma.user.count({ where });
+    const users = await this.prisma.user.findMany({
+      where,
+      include: this.userInclude(),
+      skip: (sanitizedPage - 1) * sanitizedPerPage,
+      take: sanitizedPerPage,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      items: users.map((u) => this.toUserDto(u)),
+      total,
+      page: sanitizedPage,
+      perPage: sanitizedPerPage,
+    };
+  }
 }

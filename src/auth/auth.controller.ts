@@ -1,13 +1,20 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   UnauthorizedException,
   BadRequestException,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
+import { StateUserLoginDto } from './dto/state-user-login.dto';
+import { AdminLoginDto } from './dto/admin-login.dto';
+import { UserPermissionsDto } from './dto/user-permissions.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 import {
   ApiTags,
@@ -16,6 +23,7 @@ import {
   ApiOkResponse,
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 
 @ApiTags('Auth')
@@ -128,5 +136,83 @@ export class AuthController {
     const token = await this.authService.issueToken(user, interfaceSelection, ubi);
 
     return { accessToken: token };
+  }
+
+  /**
+   * State User Login
+   */
+  @Post('login/state-user')
+  @ApiOperation({
+    summary: 'State user login - authenticate and return token',
+  })
+  @ApiBody({ type: StateUserLoginDto })
+  @ApiOkResponse({
+    type: AuthResponseDto,
+    description: 'State user authentication successful',
+  })
+  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
+  async stateUserLogin(@Body() body: StateUserLoginDto): Promise<AuthResponseDto> {
+    const { email, password } = body;
+
+    const user = await this.authService.validateStateUser(email, password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials or insufficient permissions');
+    }
+
+    // Issue token for state user interface
+    const token = await this.authService.issueToken(user, 'state');
+
+    return { accessToken: token };
+  }
+
+  /**
+   * Admin Login
+   */
+  @Post('login/admin')
+  @ApiOperation({
+    summary: 'Admin login - authenticate with optional license pre-selection',
+  })
+  @ApiBody({ type: AdminLoginDto })
+  @ApiOkResponse({
+    type: AuthResponseDto,
+    description: 'Admin authentication successful',
+  })
+  @ApiUnauthorizedResponse({ description: 'Invalid credentials or license number' })
+  async adminLogin(@Body() body: AdminLoginDto): Promise<AuthResponseDto> {
+    const { email, password, licenseNumber } = body;
+
+    const user = await this.authService.validateAdmin(email, password, licenseNumber);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials or insufficient permissions');
+    }
+
+    // Issue token for admin interface with optional license context
+    const token = await this.authService.issueToken(user, 'admin', licenseNumber);
+
+    return { accessToken: token };
+  }
+
+  /**
+   * Get User Permissions
+   */
+  @Get('permissions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get user permissions based on role and context',
+  })
+  @ApiOkResponse({
+    type: UserPermissionsDto,
+    description: 'User permissions retrieved successfully',
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async getPermissions(@Request() req): Promise<UserPermissionsDto> {
+    const userId = req.user?.sub || req.user?.id;
+    
+    if (!userId) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+
+    return this.authService.getUserPermissions(userId);
   }
 }

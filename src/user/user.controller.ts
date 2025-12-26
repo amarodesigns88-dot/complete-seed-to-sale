@@ -22,6 +22,7 @@ import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
   ApiQuery,
+  ApiParam,
 } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -35,6 +36,10 @@ import { LocationAssignmentDto } from './dto/location-assignment.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserDto } from './dto/user.dto';
+import { AssignRoleDto } from './dto/assign-role.dto';
+import { UserPermissionResponseDto } from './dto/user-permission-response.dto';
+import { AccessibleUbiDto } from './dto/accessible-ubi.dto';
+import { UserTypeFilterDto } from './dto/user-type-filter.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -152,5 +157,74 @@ export class UserController {
   @ApiNoContentResponse()
   async adminResetPassword(@Param('id', ParseUUIDPipe) id: string, @Body() dto: ResetPasswordDto) {
     await this.userService.adminResetPassword(id, dto);
+  }
+
+  // New Sprint 1 endpoints
+  @UseGuards(RolesGuard)
+  @Roles('system_admin')
+  @Post(':id/roles')
+  @ApiOperation({ summary: 'Assign a role to user' })
+  @ApiOkResponse({ type: UserDto })
+  @ApiParam({ name: 'id', type: 'string', description: 'User ID' })
+  async addRoleToUser(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AssignRoleDto,
+  ): Promise<UserDto> {
+    return this.userService.addRoleToUser(id, dto.roleId);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('system_admin')
+  @Delete(':id/roles/:roleId')
+  @ApiOperation({ summary: 'Remove a role from user' })
+  @ApiOkResponse({ type: UserDto })
+  @ApiParam({ name: 'id', type: 'string', description: 'User ID' })
+  @ApiParam({ name: 'roleId', type: 'string', description: 'Role ID' })
+  async removeRoleFromUser(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('roleId', ParseUUIDPipe) roleId: string,
+  ): Promise<UserDto> {
+    return this.userService.removeRoleFromUser(id, roleId);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('system_admin', 'state_user', 'licensee_admin')
+  @Get(':id/permissions')
+  @ApiOperation({ summary: 'Get user effective permissions' })
+  @ApiOkResponse({ type: UserPermissionResponseDto })
+  @ApiParam({ name: 'id', type: 'string', description: 'User ID' })
+  async getUserPermissions(@Param('id', ParseUUIDPipe) id: string): Promise<UserPermissionResponseDto> {
+    return this.userService.getUserPermissions(id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('system_admin')
+  @Post(':id/accessible-ubis')
+  @ApiOperation({ summary: 'Set accessible UBIs for user' })
+  @ApiOkResponse({ type: UserDto })
+  @ApiParam({ name: 'id', type: 'string', description: 'User ID' })
+  async setAccessibleUbis(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AccessibleUbiDto,
+  ): Promise<UserDto> {
+    return this.userService.setAccessibleUbis(id, dto.ubis);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('system_admin', 'state_user')
+  @Get('by-type/:userType')
+  @ApiOperation({ summary: 'List users by type (Admin, State, Licensee)' })
+  @ApiParam({ name: 'userType', enum: ['Admin', 'State', 'Licensee'] })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'perPage', required: false })
+  async getUsersByType(
+    @Param('userType') userType: 'Admin' | 'State' | 'Licensee',
+    @Query('page') page = '1',
+    @Query('perPage') perPage = '25',
+  ) {
+    const p = Math.max(1, parseInt(page as string, 10) || 1);
+    const pp = Math.min(200, Math.max(1, parseInt(perPage as string, 10) || 25));
+    
+    return this.userService.getUsersByType(userType, { page: p, perPage: pp });
   }
 }
