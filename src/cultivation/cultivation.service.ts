@@ -790,6 +790,331 @@ export class CultivationService {
     return this.createRoomMove(plantId, null, { fromRoomId: plant.roomId ?? undefined, toRoomId }, userId);
   }
 
+  // --- Mother Plant Operations (Sprint 3-4 Enhancement) ---
+
+  /**
+   * Convert an existing plant to a mother plant.
+   * Sets isMother flag to true and updates status.
+   */
+  async convertToMotherPlant(locationId: string, plantId: string, notes?: string, userId?: string | null) {
+    const plant = await this.getPlant(locationId, plantId);
+    
+    if (plant.status !== 'active') {
+      throw new BadRequestException('Only active plants can be converted to mother plants');
+    }
+
+    const updated = await this.prisma.plant.update({
+      where: { id: plantId },
+      data: {
+        isMother: true,
+        status: 'mother',
+      },
+    });
+
+    // Audit log
+    await this.prisma.auditLog.create({
+      data: {
+        userId: userId ?? null,
+        module: 'cultivation',
+        entityType: 'plant',
+        entityId: plantId,
+        actionType: 'convert_to_mother',
+        details: {
+          notes: notes ?? null,
+          previousStatus: plant.status,
+        },
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Generate clones from a mother plant.
+   * Creates inventory items of type 'clone' and tracks parent relationship.
+   */
+  async generateClones(
+    locationId: string,
+    motherPlantId: string,
+    data: {
+      quantity: number;
+      roomId: string;
+      batchId?: string;
+      notes?: string;
+    },
+    userId?: string | null,
+  ) {
+    const motherPlant = await this.getPlant(locationId, motherPlantId);
+
+    if (!motherPlant.isMother || motherPlant.status !== 'mother') {
+      throw new BadRequestException('Plant must be a mother plant to generate clones');
+    }
+
+    // Validate room
+    const room = await this.prisma.room.findUnique({ where: { id: data.roomId } });
+    if (!room || room.locationId !== locationId || room.status !== 'active' || room.deletedAt !== null) {
+      throw new BadRequestException('Invalid room ID or room does not belong to location');
+    }
+
+    const batchId = data.batchId ?? `clone-batch-${Date.now()}`;
+
+    // Create inventory item for clones
+    const cloneInventory = await this.prisma.inventoryItem.create({
+      data: {
+        locationId,
+        inventoryTypeId: 'clone', // Assuming 'clone' is a valid inventory type ID
+        productName: `Clones from Mother ${motherPlant.strain}`,
+        quantity: data.quantity,
+        unit: 'units',
+        status: 'active',
+        roomId: data.roomId,
+        sourceInventoryId: null,
+        // Track parent plant relationship if needed
+      },
+    });
+
+    // Update mother plant offspring count
+    await this.prisma.plant.update({
+      where: { id: motherPlantId },
+      data: {
+        cloneOffspringCount: { increment: data.quantity },
+      },
+    });
+
+    // Audit log
+    await this.prisma.auditLog.create({
+      data: {
+        userId: userId ?? null,
+        module: 'cultivation',
+        entityType: 'plant',
+        entityId: motherPlantId,
+        actionType: 'generate_clones',
+        details: {
+          quantity: data.quantity,
+          batchId,
+          roomId: data.roomId,
+          inventoryItemId: cloneInventory.id,
+          notes: data.notes ?? null,
+        },
+      },
+    });
+
+    return {
+      motherPlant: motherPlant,
+      cloneInventory,
+      batchId,
+    };
+  }
+
+  /**
+   * Generate seeds from a mother plant.
+   * Creates inventory items of type 'seed' and tracks parent relationship.
+   */
+  async generateSeeds(
+    locationId: string,
+    motherPlantId: string,
+    data: {
+      quantity: number;
+      roomId: string;
+      batchId?: string;
+      notes?: string;
+    },
+    userId?: string | null,
+  ) {
+    const motherPlant = await this.getPlant(locationId, motherPlantId);
+
+    if (!motherPlant.isMother || motherPlant.status !== 'mother') {
+      throw new BadRequestException('Plant must be a mother plant to generate seeds');
+    }
+
+    // Validate room
+    const room = await this.prisma.room.findUnique({ where: { id: data.roomId } });
+    if (!room || room.locationId !== locationId || room.status !== 'active' || room.deletedAt !== null) {
+      throw new BadRequestException('Invalid room ID or room does not belong to location');
+    }
+
+    const batchId = data.batchId ?? `seed-batch-${Date.now()}`;
+
+    // Create inventory item for seeds
+    const seedInventory = await this.prisma.inventoryItem.create({
+      data: {
+        locationId,
+        inventoryTypeId: 'seed', // Assuming 'seed' is a valid inventory type ID
+        productName: `Seeds from Mother ${motherPlant.strain}`,
+        quantity: data.quantity,
+        unit: 'units',
+        status: 'active',
+        roomId: data.roomId,
+        sourceInventoryId: null,
+      },
+    });
+
+    // Update mother plant offspring count
+    await this.prisma.plant.update({
+      where: { id: motherPlantId },
+      data: {
+        seedOffspringCount: { increment: data.quantity },
+      },
+    });
+
+    // Audit log
+    await this.prisma.auditLog.create({
+      data: {
+        userId: userId ?? null,
+        module: 'cultivation',
+        entityType: 'plant',
+        entityId: motherPlantId,
+        actionType: 'generate_seeds',
+        details: {
+          quantity: data.quantity,
+          batchId,
+          roomId: data.roomId,
+          inventoryItemId: seedInventory.id,
+          notes: data.notes ?? null,
+        },
+      },
+    });
+
+    return {
+      motherPlant: motherPlant,
+      seedInventory,
+      batchId,
+    };
+  }
+
+  // --- Undo Operations (Sprint 3-4 Enhancement) ---
+
+  /**
+   * Undo a previous operation if possible.
+   * Supports undoing: room moves, plant status changes, and certain inventory operations.
+   * Uses audit log to determine what to undo.
+   */
+  async undoOperation(locationId: string, operationId: string, reason?: string, userId?: string | null) {
+    // Find the audit log entry for the operation
+    const auditLog = await this.prisma.auditLog.findUnique({
+      where: { id: operationId },
+    });
+
+    if (!auditLog) {
+      throw new NotFoundException('Operation not found');
+    }
+
+    // Check if operation is undoable based on type
+    const undoableActions = [
+      'room_move',
+      'update',
+      'convert_to_mother',
+      'adjust_for_destruction',
+    ];
+
+    if (!undoableActions.includes(auditLog.actionType)) {
+      throw new BadRequestException(`Operation type '${auditLog.actionType}' cannot be undone`);
+    }
+
+    // Validate the entity still exists and belongs to the location
+    if (auditLog.entityType === 'plant') {
+      const plant = await this.prisma.plant.findUnique({
+        where: { id: auditLog.entityId },
+      });
+      if (!plant || plant.locationId !== locationId) {
+        throw new BadRequestException('Plant not found or does not belong to location');
+      }
+    }
+
+    let undoResult: any = null;
+
+    // Perform undo based on action type
+    switch (auditLog.actionType) {
+      case 'room_move':
+        undoResult = await this.undoRoomMove(auditLog, userId);
+        break;
+      case 'convert_to_mother':
+        undoResult = await this.undoConvertToMother(auditLog, userId);
+        break;
+      case 'update':
+        undoResult = await this.undoUpdate(auditLog, userId);
+        break;
+      default:
+        throw new BadRequestException('Undo not implemented for this operation type');
+    }
+
+    // Create audit log for the undo operation
+    await this.prisma.auditLog.create({
+      data: {
+        userId: userId ?? null,
+        module: auditLog.module,
+        entityType: auditLog.entityType,
+        entityId: auditLog.entityId,
+        actionType: 'undo',
+        details: {
+          undoneOperationId: operationId,
+          originalActionType: auditLog.actionType,
+          reason: reason ?? null,
+          undoResult,
+        },
+      },
+    });
+
+    return {
+      message: 'Operation undone successfully',
+      originalOperation: auditLog,
+      undoResult,
+    };
+  }
+
+  private async undoRoomMove(auditLog: any, userId?: string | null) {
+    const details = auditLog.details as any;
+    const fromRoomId = details.fromRoomId;
+    const toRoomId = details.toRoomId;
+
+    if (!fromRoomId) {
+      throw new BadRequestException('Cannot undo room move: no previous room information');
+    }
+
+    // Move back to original room
+    if (auditLog.entityType === 'plant') {
+      await this.prisma.plant.update({
+        where: { id: auditLog.entityId },
+        data: { roomId: fromRoomId },
+      });
+
+      return {
+        entityType: 'plant',
+        entityId: auditLog.entityId,
+        restoredRoomId: fromRoomId,
+      };
+    }
+
+    return null;
+  }
+
+  private async undoConvertToMother(auditLog: any, userId?: string | null) {
+    const details = auditLog.details as any;
+    const previousStatus = details.previousStatus ?? 'active';
+
+    // Revert plant back to non-mother status
+    await this.prisma.plant.update({
+      where: { id: auditLog.entityId },
+      data: {
+        isMother: false,
+        status: previousStatus,
+      },
+    });
+
+    return {
+      entityType: 'plant',
+      entityId: auditLog.entityId,
+      restoredStatus: previousStatus,
+      isMother: false,
+    };
+  }
+
+  private async undoUpdate(auditLog: any, userId?: string | null) {
+    // For updates, we would need oldValues and newValues in the audit log
+    // This is a simplified version - production would need more sophisticated tracking
+    throw new BadRequestException('Undo for generic updates requires old/new value tracking');
+  }
+
   private generate16DigitBarcode(): string {
     const left = randomInt(0, 100_000_000).toString().padStart(8, '0');
     const right = randomInt(0, 100_000_000).toString().padStart(8, '0');

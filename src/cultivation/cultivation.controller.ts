@@ -303,4 +303,95 @@ export class CultivationController {
   listRooms(@Param('locationId', ParseUUIDPipe) locationId: string) {
     return this.cultivationService.listRooms(locationId);
   }
+
+  // --- Mother Plant Operations (Sprint 3-4 Enhancement) ---
+
+  // Convert plant to mother
+  @Post(':locationId/plants/:plantId/convert-to-mother')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Convert a plant to a mother plant' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiParam({ name: 'plantId', description: 'Plant UUID' })
+  @ApiResponse({ status: 201, description: 'Plant converted to mother successfully' })
+  async convertToMotherPlant(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Param('plantId', ParseUUIDPipe) plantId: string,
+    @Body() body: { notes?: string },
+    @Req() req: any,
+  ) {
+    const plant = await this.cultivationService.getPlantById(plantId);
+    if (!plant || plant.locationId !== locationId) {
+      throw new NotFoundException('Plant not found in the specified location');
+    }
+
+    const userId = req.user?.userId ?? req.user?.id ?? null;
+    return this.cultivationService.convertToMotherPlant(locationId, plantId, body.notes, userId);
+  }
+
+  // Generate clones from mother plant
+  @Post(':locationId/plants/:plantId/generate-clones')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Generate clones from a mother plant' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiParam({ name: 'plantId', description: 'Mother plant UUID' })
+  @ApiResponse({ status: 201, description: 'Clones generated successfully' })
+  async generateClones(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Param('plantId', ParseUUIDPipe) plantId: string,
+    @Body() body: { quantity: number; roomId: string; batchId?: string; notes?: string },
+    @Req() req: any,
+  ) {
+    const plant = await this.cultivationService.getPlantById(plantId);
+    if (!plant || plant.locationId !== locationId) {
+      throw new NotFoundException('Plant not found in the specified location');
+    }
+
+    const userId = req.user?.userId ?? req.user?.id ?? null;
+    return this.cultivationService.generateClones(locationId, plantId, body, userId);
+  }
+
+  // Generate seeds from mother plant
+  @Post(':locationId/plants/:plantId/generate-seeds')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Generate seeds from a mother plant' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiParam({ name: 'plantId', description: 'Mother plant UUID' })
+  @ApiResponse({ status: 201, description: 'Seeds generated successfully' })
+  async generateSeeds(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Param('plantId', ParseUUIDPipe) plantId: string,
+    @Body() body: { quantity: number; roomId: string; batchId?: string; notes?: string },
+    @Req() req: any,
+  ) {
+    const plant = await this.cultivationService.getPlantById(plantId);
+    if (!plant || plant.locationId !== locationId) {
+      throw new NotFoundException('Plant not found in the specified location');
+    }
+
+    const userId = req.user?.userId ?? req.user?.id ?? null;
+    return this.cultivationService.generateSeeds(locationId, plantId, body, userId);
+  }
+
+  // --- Undo Operations (Sprint 3-4 Enhancement) ---
+
+  // Undo an operation
+  @Post(':locationId/operations/:operationId/undo')
+  @Roles('licensee_admin')
+  @LocationModulePermissions(['cultivation'])
+  @ApiOperation({ summary: 'Undo a previous cultivation operation' })
+  @ApiParam({ name: 'locationId', description: 'Location UUID' })
+  @ApiParam({ name: 'operationId', description: 'Audit log operation UUID' })
+  @ApiResponse({ status: 200, description: 'Operation undone successfully' })
+  async undoOperation(
+    @Param('locationId', ParseUUIDPipe) locationId: string,
+    @Param('operationId', ParseUUIDPipe) operationId: string,
+    @Body() body: { reason?: string },
+    @Req() req: any,
+  ) {
+    const userId = req.user?.userId ?? req.user?.id ?? null;
+    return this.cultivationService.undoOperation(locationId, operationId, body.reason, userId);
+  }
 }
