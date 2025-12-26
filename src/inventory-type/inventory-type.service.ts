@@ -18,11 +18,11 @@ export class InventoryTypeService {
     return inventoryType;
   }
 
-  async create(data: { name: string; description?: string; unit: string; isSource: boolean }): Promise<InventoryType> {
+  async create(data: { name: string; description?: string; unit: string; isSource: boolean; category: string }): Promise<InventoryType> {
     return this.prisma.inventoryType.create({ data });
   }
 
-  async update(id: string, data: Partial<{ name: string; description?: string; unit: string; isSource: boolean; isActive: boolean }>): Promise<InventoryType> {
+  async update(id: string, data: Partial<{ name: string; description?: string; unit: string; isSource: boolean; isActive: boolean; category: string }>): Promise<InventoryType> {
     await this.findOne(id); // ensure exists
     return this.prisma.inventoryType.update({ where: { id }, data });
   }

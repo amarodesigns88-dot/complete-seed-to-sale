@@ -284,7 +284,7 @@ export class UserService {
     // Aggregate permissions from all user permissions
     const allModules = new Set<string>();
     for (const perm of user.permissions) {
-      const modules = Array.isArray(perm.modules) ? perm.modules : JSON.parse(perm.modules || '[]');
+      const modules = Array.isArray(perm.modules) ? perm.modules : JSON.parse(String(perm.modules || '[]'));
       modules.forEach((m: string) => allModules.add(m));
     }
 
