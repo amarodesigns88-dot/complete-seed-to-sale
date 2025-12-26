@@ -123,11 +123,15 @@ model InventoryType {
   id          String   @id @default(uuid())
   name        String   @unique
   description String?
-  unit        String // e.g., "units", "grams"
-  isSource    Boolean // true if source inventory type (clone, seed, etc.)
+  category    String // Source, Waste, Wet, Dry, Lot, Extraction, FinishedGoods
+  unit        String // e.g., "units", "grams", "kg", "lbs", "ml", "oz", "each"
+  isSource    Boolean  @default(false) // true if source inventory type (clone, seed)
+  isWaste     Boolean  @default(false) // true if waste type (logging only, must be destroyed)
+  canConvert  Boolean  @default(true) // false for waste type
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   // Opposite relation to inventory items
   inventoryItems InventoryItem[] @relation("InventoryTypeToItems")
@@ -153,6 +157,10 @@ model InventoryItem {
   productName       String
   quantity          Float
   unit              String
+  usableWeight      Float? // For finished goods - weight that deducts from patient allotment
+  lotId             String? // For items that are part of a lot
+  sublotIdentifier  String? // For split inventory tracking (parent-child relationship)
+  roomId            String? // Current room location for inventory
   barcode           String         @unique
   status            String         @default("active")
   createdAt         DateTime       @default(now())
@@ -418,4 +426,192 @@ model Room {
 
   @@unique([locationId, name])
   @@index([locationId])
+}
+
+// New models for complete system implementation
+
+model LicenseType {
+  id          String    @id @default(uuid())
+  name        String    @unique // Cultivator, Manufacturer, Retail, Lab, etc.
+  description String?
+  canTransfer Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+}
+
+model Lot {
+  id                 String    @id @default(uuid())
+  locationId         String
+  batchNumber        String    @unique
+  inventoryTypeId    String // Type of lot (Lot of Wet Flower, Lot of Dry Flower, Lot of Trim)
+  totalQuantity      Float
+  unit               String // lbs or kg
+  status             String    @default("active")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+  
+  // Source inventory items that make up this lot
+  sourceInventoryIds Json? // Array of inventory item IDs used to create this lot
+}
+
+model Product {
+  id                String    @id @default(uuid())
+  locationId        String
+  name              String
+  inventoryItemId   String? // Link to finished goods inventory
+  category          String? // Product category for retail
+  price             Float
+  discountPrice     Float?
+  loyaltyPoints     Int       @default(0)
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+  
+  @@index([locationId])
+}
+
+model Driver {
+  id             String    @id @default(uuid())
+  locationId     String
+  name           String
+  licenseNumber  String
+  status         String    @default("active")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  
+  transfers TransferDriver[]
+  
+  @@index([locationId])
+}
+
+model Vehicle {
+  id              String    @id @default(uuid())
+  locationId      String
+  make            String
+  model           String
+  licensePlate    String
+  status          String    @default("active")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  
+  transfers TransferVehicle[]
+  
+  @@index([locationId])
+}
+
+model TransferDriver {
+  id         String   @id @default(uuid())
+  transferId String
+  driverId   String
+  driver     Driver   @relation(fields: [driverId], references: [id])
+  createdAt  DateTime @default(now())
+  
+  @@index([transferId])
+}
+
+model TransferVehicle {
+  id         String   @id @default(uuid())
+  transferId String
+  vehicleId  String
+  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id])
+  createdAt  DateTime @default(now())
+  
+  @@index([transferId])
+}
+
+model Sample {
+  id                String    @id @default(uuid())
+  inventoryItemId   String // Inventory item sample was extracted from
+  labLocationId     String? // Lab assigned to test
+  sampleBarcode     String    @unique
+  panelId           String? // TestingPanel assigned
+  quantity          Float
+  unit              String
+  status            String    @default("pending") // pending, sent_to_lab, testing, completed, voided
+  voidedAt          DateTime?
+  voidReason        String?
+  remediationStatus String? // For failed tests - pending_state_approval, approved, rejected
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+  
+  testResults TestResult[]
+  
+  @@index([inventoryItemId])
+  @@index([labLocationId])
+}
+
+model TestResult {
+  id              String    @id @default(uuid())
+  sampleId        String
+  sample          Sample    @relation(fields: [sampleId], references: [id])
+  testName        String
+  result          Json // Test result data
+  pass            Boolean
+  coaUrl          String? // URL to Certificate of Analysis
+  testedBy        String? // Lab technician
+  testedAt        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([sampleId])
+}
+
+model StateRequest {
+  id              String    @id @default(uuid())
+  locationId      String // Licensee requesting
+  requestType     String // remediation, etc.
+  sampleId        String? // For remediation requests
+  description     String
+  status          String    @default("pending") // pending, approved, rejected
+  reviewedBy      String? // State user ID
+  reviewedAt      DateTime?
+  reviewNotes     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([locationId])
+  @@index([status])
+}
+
+model InventoryAdjustment {
+  id              String    @id @default(uuid())
+  inventoryItemId String
+  adjustmentType  String // increase, decrease
+  quantity        Float
+  reason          String
+  isRedFlagged    Boolean   @default(false) // Warning for unusual adjustments
+  createdBy       String
+  createdAt       DateTime  @default(now())
+  deletedAt       DateTime?
+  
+  @@index([inventoryItemId])
+}
+
+model InventorySplit {
+  id                  String    @id @default(uuid())
+  parentInventoryId   String // Original inventory item
+  childInventoryIds   Json // Array of created child inventory IDs
+  splitReason         String?
+  createdBy           String
+  createdAt           DateTime  @default(now())
+  deletedAt           DateTime?
+  
+  @@index([parentInventoryId])
+}
+
+model InventoryCombination {
+  id                   String    @id @default(uuid())
+  sourceInventoryIds   Json // Array of source inventory item IDs combined
+  targetInventoryId    String? // Existing inventory if combining into existing
+  newInventoryId       String? // New inventory if creating new item
+  combinationType      String // into_existing, create_new
+  createdBy            String
+  createdAt            DateTime  @default(now())
+  deletedAt            DateTime?
 }
