@@ -55,7 +55,7 @@ export class LicenseeReportingService {
           acc[category] = { count: 0, revenue: 0 };
         }
         acc[category].count += item.quantity;
-        acc[category].revenue += item.totalPrice;
+        acc[category].revenue += item.price * item.quantity; // totalPrice doesn't exist, calculate it
       });
       return acc;
     }, {});
