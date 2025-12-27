@@ -23,12 +23,12 @@ export class ConversionService {
       throw new NotFoundException('Source inventory not found');
     }
 
-    if (sourceInventory.weightGrams < dto.inputWeightGrams) {
+    if (sourceInventory.quantity < dto.inputWeightGrams) {
       throw new BadRequestException('Insufficient source inventory quantity');
     }
 
     // Validate inventory type is wet
-    if (!sourceInventory.inventoryType.category.includes('Wet')) {
+    if (!sourceInventory.inventoryType?.category.includes('Wet')) {
       throw new BadRequestException('Source inventory must be a wet type');
     }
 
@@ -60,25 +60,25 @@ export class ConversionService {
 
     // Create conversion record and update inventory
     const result = await this.prisma.$transaction(async (tx) => {
-      // Create conversion record (using Inventory table with special metadata)
-      const conversion = await tx.inventory.create({
+      // Create conversion record (using InventoryItem table with special metadata)
+      const conversion = await tx.inventoryItem.create({
         data: {
           locationId,
           inventoryTypeId: dto.outputInventoryTypeId,
-          strainId: dto.strainId,
-          roomId: dto.roomId,
-          weightGrams: dto.outputWeightGrams,
+          productName: `Conversion Output - ${dto.batchNumber}`,
+          quantity: dto.outputWeightGrams,
+          unit: 'grams',
           usableWeight: dto.outputWeightGrams, // For dry, usable = total
-          batchNumber: dto.batchNumber,
+          roomId: dto.roomId,
           barcode: this.generateBarcode(),
         },
       });
 
       // Update source inventory (consume input weight)
-      await tx.inventory.update({
+      await tx.inventoryItem.update({
         where: { id: dto.sourceInventoryId },
         data: {
-          weightGrams: sourceInventory.weightGrams - dto.inputWeightGrams,
+          quantity: sourceInventory.quantity - dto.inputWeightGrams,
         },
       });
 
@@ -123,12 +123,12 @@ export class ConversionService {
       throw new NotFoundException('Source inventory not found');
     }
 
-    if (sourceInventory.weightGrams < dto.inputWeightGrams) {
+    if (sourceInventory.quantity < dto.inputWeightGrams) {
       throw new BadRequestException('Insufficient source inventory quantity');
     }
 
     // Validate inventory type is dry
-    if (!sourceInventory.inventoryType.category.includes('Dry')) {
+    if (!sourceInventory.inventoryType?.category.includes('Dry')) {
       throw new BadRequestException('Source inventory must be a dry type');
     }
 
@@ -161,24 +161,24 @@ export class ConversionService {
     // Create conversion record and update inventory
     const result = await this.prisma.$transaction(async (tx) => {
       // Create conversion record
-      const conversion = await tx.inventory.create({
+      const conversion = await tx.inventoryItem.create({
         data: {
           locationId,
           inventoryTypeId: dto.outputInventoryTypeId,
-          strainId: dto.strainId,
-          roomId: dto.roomId,
-          weightGrams: dto.outputWeightGrams,
+          productName: `Conversion Output - ${dto.batchNumber}`,
+          quantity: dto.outputWeightGrams,
+          unit: 'grams',
           usableWeight: dto.outputWeightGrams, // For extraction, usable = total
-          batchNumber: dto.batchNumber,
+          roomId: dto.roomId,
           barcode: this.generateBarcode(),
         },
       });
 
       // Update source inventory (consume input weight)
-      await tx.inventory.update({
+      await tx.inventoryItem.update({
         where: { id: dto.sourceInventoryId },
         data: {
-          weightGrams: sourceInventory.weightGrams - dto.inputWeightGrams,
+          quantity: sourceInventory.quantity - dto.inputWeightGrams,
         },
       });
 
@@ -224,12 +224,12 @@ export class ConversionService {
       throw new NotFoundException('Source inventory not found');
     }
 
-    if (sourceInventory.weightGrams < dto.inputWeightGrams) {
+    if (sourceInventory.quantity < dto.inputWeightGrams) {
       throw new BadRequestException('Insufficient source inventory quantity');
     }
 
     // Validate inventory type is extraction
-    if (!sourceInventory.inventoryType.category.includes('Extraction')) {
+    if (!sourceInventory.inventoryType?.category.includes('Extraction')) {
       throw new BadRequestException('Source inventory must be an extraction type');
     }
 
@@ -267,25 +267,24 @@ export class ConversionService {
     // Create conversion record and update inventory
     const result = await this.prisma.$transaction(async (tx) => {
       // Create conversion record with usable weight
-      const conversion = await tx.inventory.create({
+      const conversion = await tx.inventoryItem.create({
         data: {
           locationId,
           inventoryTypeId: dto.outputInventoryTypeId,
-          strainId: dto.strainId,
-          roomId: dto.roomId,
-          weightGrams: dto.outputWeightGrams,
-          usableWeight: dto.usableWeight, // Track usable weight for finished goods
+          productName: `Conversion Output - ${dto.batchNumber}`,
           quantity: dto.unitsProduced,
-          batchNumber: dto.batchNumber,
+          unit: 'units',
+          usableWeight: dto.usableWeight, // Track usable weight for finished goods
+          roomId: dto.roomId,
           barcode: this.generateBarcode(),
         },
       });
 
       // Update source inventory (consume input weight)
-      await tx.inventory.update({
+      await tx.inventoryItem.update({
         where: { id: dto.sourceInventoryId },
         data: {
-          weightGrams: sourceInventory.weightGrams - dto.inputWeightGrams,
+          quantity: sourceInventory.quantity - dto.inputWeightGrams,
         },
       });
 
