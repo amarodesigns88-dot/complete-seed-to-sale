@@ -35,7 +35,6 @@ export class LabService {
         sampleId: dto.sampleId,
         testName: dto.testType || 'General Test',
         result: dto.result,
-        pass: dto.pass !== undefined ? dto.pass : true,
       },
     });
 
@@ -107,8 +106,6 @@ export class LabService {
     const updatedSample = await this.prisma.sample.update({
       where: { id: dto.sampleId },
       data: {
-        // coaGenerated field does not exist
-        coaGeneratedAt: new Date(),
         coaCertificationNumber: dto.certificationNumber,
       },
     });

@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class RoomService {
   constructor(
     private readonly prisma: PrismaService,
-    // Optional AuditService — register it in the module if you have one.
+    // Optional AuditService ï¿½ register it in the module if you have one.
     @Optional() @Inject('AuditService') private readonly auditService?: any,
   ) {}
 
@@ -190,7 +190,6 @@ export class RoomService {
       try {
         await this.prisma.auditLog.create({
           data: {
-        module: "Cultivation",
             id: uuidv4(),
             userId: entry.userId,
             module: entry.module,

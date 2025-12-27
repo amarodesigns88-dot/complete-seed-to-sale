@@ -65,7 +65,6 @@ export class InventoryService {
         actionType: 'ROOM_MOVE',
         oldValue: JSON.stringify({ roomId: inventoryItem.roomId, roomName: inventoryItem.room?.name }),
         newValue: JSON.stringify({ roomId: targetRoom.id, roomName: targetRoom.name }),
-        reason: dto.reason || 'Room movement',
       },
     });
 
@@ -108,8 +107,6 @@ export class InventoryService {
       data: {
         inventoryItemId,
         adjustmentGrams: dto.adjustmentGrams,
-        previousQuantityGrams: inventoryItem.quantity,
-        newQuantityGrams: newQuantity,
         adjustmentType: dto.adjustmentType,
         isRedFlag,
       },
@@ -158,7 +155,7 @@ export class InventoryService {
         locationId,
         deletedAt: null,
       },
-      include: { inventoryType: true, strain: true },
+      include: { inventoryType: true },
     });
 
     if (!parentItem) {
@@ -175,7 +172,7 @@ export class InventoryService {
     const baseSubLot = parentItem.sublotIdentifier || `${parentItem.barcode.substring(8)}`;
 
     // Create split items
-    const splitItems = [];
+    const splitItems: any[] = [];
     for (let i = 0; i < dto.splits.length; i++) {
       const split = dto.splits[i];
       const sublotId = `${baseSubLot}-${i + 1}`;
@@ -187,6 +184,8 @@ export class InventoryService {
         data: {
           barcode,
           inventoryTypeId: parentItem.inventoryTypeId,
+          productName: `${parentItem.productName} - Split ${index + 1}`,
+          unit: parentItem.unit,
           strainId: parentItem.strainId,
           quantity: split.weightGrams,
           roomId: split.roomId || parentItem.roomId,
@@ -313,6 +312,8 @@ export class InventoryService {
         data: {
           barcode,
           inventoryTypeId: firstTypeId,
+          productName: `Combined ${items[0].productName}`,
+          unit: items[0].unit,
           strainId: items[0].strainId,
           quantity: totalWeight,
           usableWeight: totalUsableWeight > 0 ? totalUsableWeight : null,
@@ -327,6 +328,8 @@ export class InventoryService {
     const combinationRecord = await this.prisma.inventoryCombination.create({
       data: {
         targetInventoryId: combinedItem.id,
+        sourceInventoryIds: dto.inventoryItemIds,
+        combinationType: 'MERGE',
         createdBy: 'system',
       },
     });
@@ -465,7 +468,6 @@ export class InventoryService {
           lotItemId: lotItem.id,
           totalWeight,
         }),
-        reason: 'Lot creation from inventory items',
       },
     });
 
@@ -643,20 +645,17 @@ export class InventoryService {
   async getAdjustments(locationId: string, page: number = 1, limit: number = 50) {
     const skip = (page - 1) * limit;
 
+    // Get inventory item IDs for this location first
+    const inventoryItems = await this.prisma.inventoryItem.findMany({
+      where: { locationId, deletedAt: null },
+      select: { id: true },
+    });
+    const inventoryItemIds = inventoryItems.map(item => item.id);
+
     const [adjustments, total] = await Promise.all([
       this.prisma.inventoryAdjustment.findMany({
         where: {
-          inventoryItem: {
-            locationId,
-          },
-        },
-        include: {
-          inventoryItem: {
-            include: {
-              inventoryType: true,
-              room: true,
-            },
-          },
+          inventoryItemId: { in: inventoryItemIds },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -664,9 +663,7 @@ export class InventoryService {
       }),
       this.prisma.inventoryAdjustment.count({
         where: {
-          inventoryItem: {
-            locationId,
-          },
+          inventoryItemId: { in: inventoryItemIds },
         },
       }),
     ]);
