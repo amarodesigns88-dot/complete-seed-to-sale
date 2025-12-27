@@ -141,9 +141,6 @@ export class StateDashboardService {
         InventoryItems: {
           where: { deletedAt: null },
         },
-        Sales: {
-          where: { deletedAt: null },
-        },
         TransfersSent: {
           where: { deletedAt: null },
         },
@@ -153,7 +150,7 @@ export class StateDashboardService {
 
     return licensees.map((licensee) => {
       const inventoryQuantity = licensee.InventoryItems.reduce((sum, inv) => sum + inv.quantity, 0);
-      const salesAmount = licensee.Sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+      const salesAmount = 0; // Sales don't have locationId, would need separate query
       const transferCount = (licensee.TransfersSent || []).length;
 
       // Get red flags count from audit logs (simplified)
@@ -162,7 +159,6 @@ export class StateDashboardService {
       // Get last activity date
       const dates = [
         ...licensee.InventoryItems.map((i) => i.createdAt),
-        ...licensee.Sales.map((s) => s.createdAt),
         ...(licensee.TransfersSent || []).map((t) => t.createdAt),
       ];
       const lastActivityDate = dates.length > 0 ? new Date(Math.max(...dates.map((d) => d.getTime()))) : licensee.createdAt;
