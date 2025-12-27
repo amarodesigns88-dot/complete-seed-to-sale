@@ -1135,4 +1135,9 @@ export class CultivationService {
     const right = randomInt(0, 100_000_000).toString().padStart(8, '0');
     return `${left}${right}`;
   }
+
+  private generateBarcode(): string {
+    // Generate a 16-digit barcode (alias for generate16DigitBarcode)
+    return this.generate16DigitBarcode();
+  }
 }

@@ -93,7 +93,7 @@ export class TransferService {
         status: TransferStatus.PENDING,
         estimatedArrival: new Date(dto.estimatedArrival),
         notes: dto.notes,
-        items: {
+        transferItems: {
           create: dto.items.map((item) => ({
             inventoryItemId: item.inventoryItemId,
             quantity: item.quantity,
@@ -101,7 +101,7 @@ export class TransferService {
         },
       },
       include: {
-        items: {
+        transferItems: {
           include: {
             inventoryItem: true,
           },
@@ -162,7 +162,7 @@ export class TransferService {
       this.prisma.transfer.findMany({
         where,
         include: {
-          items: {
+          transferItems: {
             include: {
               inventoryItem: true,
             },
@@ -197,7 +197,7 @@ export class TransferService {
         status: TransferStatus.PENDING,
       },
       include: {
-        items: {
+        transferItems: {
           include: {
             inventoryItem: true,
           },
@@ -226,7 +226,7 @@ export class TransferService {
         },
       },
       include: {
-        items: {
+        transferItems: {
           include: {
             inventoryItem: true,
           },
@@ -245,7 +245,7 @@ export class TransferService {
     const transfer = await this.prisma.transfer.findUnique({
       where: { id: transferId },
       include: {
-        items: {
+        transferItems: {
           include: {
             inventoryItem: true,
           },
@@ -280,7 +280,7 @@ export class TransferService {
     const transfer = await this.prisma.transfer.findUnique({
       where: { id: transferId },
       include: {
-        items: {
+        transferItems: {
           include: {
             inventoryItem: true,
           },
@@ -306,7 +306,7 @@ export class TransferService {
 
     if (dto.status === 'RECEIVED') {
       // Create inventory items at destination location
-      for (const item of transfer.items) {
+      for (const item of transfer.transferItems) {
         await this.prisma.inventoryItem.create({
           data: {
             locationId: locationId,
@@ -320,7 +320,7 @@ export class TransferService {
       }
     } else if (dto.status === 'REJECTED') {
       // Return items to source location inventory
-      for (const item of transfer.items) {
+      for (const item of transfer.transferItems) {
         await this.prisma.inventoryItem.update({
           where: { id: item.inventoryItemId },
           data: {
@@ -341,7 +341,7 @@ export class TransferService {
         receivedAt: dto.status === 'RECEIVED' ? new Date() : null,
       },
       include: {
-        items: {
+        transferItems: {
           include: {
             inventoryItem: true,
           },

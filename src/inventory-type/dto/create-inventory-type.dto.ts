@@ -13,4 +13,7 @@ export class CreateInventoryTypeDto {
 
   @IsBoolean()
   isSource: boolean;
+
+  @IsString()
+  category: string;
 }

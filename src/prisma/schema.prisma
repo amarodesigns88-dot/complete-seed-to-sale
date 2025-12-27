@@ -18,6 +18,7 @@ model User {
   passwordHash     String
   status           String           @default("active")
   isActive         Boolean          @default(true)
+  metadata         Json?            // optional metadata for user
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -60,20 +61,23 @@ model UserPermission {
 }
 
 model Location {
-  id               String     @id @default(uuid())
-  parentLocationId String?
-  parentLocation   Location?  @relation("LocationToLocation", fields: [parentLocationId], references: [id])
-  childLocations   Location[] @relation("LocationToLocation")
-  ubi              String?    @unique
-  licenseNumber    String?    @unique
-  name             String
-  licenseType      String
-  enabledModules   Json       @default("[]")
-  address          String?
-  status           String     @default("active")
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  deletedAt        DateTime?
+  id                    String     @id @default(uuid())
+  parentLocationId      String?
+  parentLocation        Location?  @relation("LocationToLocation", fields: [parentLocationId], references: [id])
+  childLocations        Location[] @relation("LocationToLocation")
+  ubi                   String?    @unique
+  licenseNumber         String?    @unique
+  name                  String
+  licenseType           String
+  enabledModules        Json       @default("[]")
+  address               String?
+  status                String     @default("active")
+  isActive              Boolean    @default(true)
+  inventoryWindowStart  DateTime?
+  inventoryWindowEnd    DateTime?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  deletedAt             DateTime?
 
   // back-relation for users whose parentLocationId points to this Location
   parentUsers User[] @relation("UserParentLocation")
@@ -161,6 +165,8 @@ model InventoryItem {
   lotId             String? // For items that are part of a lot
   sublotIdentifier  String? // For split inventory tracking (parent-child relationship)
   roomId            String? // Current room location for inventory
+  room              Room?   @relation("InventoryItemRoom", fields: [roomId], references: [id])
+  strainId          String? // Strain reference for tracking
   barcode           String         @unique
   status            String         @default("active")
   createdAt         DateTime       @default(now())
@@ -262,6 +268,7 @@ model Transfer {
   user               User      @relation("UserTransfers", fields: [userId], references: [id])
   manifestNumber     String    @unique
   status             String    @default("pending")
+  notes              String?   // optional notes for transfer
   voidedAt           DateTime?
   voidReason         String?
   createdAt          DateTime  @default(now())
@@ -358,6 +365,7 @@ model Sale {
   userId      String?
   user        User?     @relation(fields: [userId], references: [id])
   totalAmount Float
+  tax         Float     @default(0) // tax amount
   status      String    @default("completed")
   voidedAt    DateTime?
   voidReason  String?
@@ -396,11 +404,16 @@ model AuditLog {
   id         String   @id @default(uuid())
   userId     String?
   user       User?    @relation(fields: [userId], references: [id])
+  locationId String?  // location where action occurred
   module     String
   entityType String
   entityId   String
   actionType String
+  action     String?  // specific action performed
   details    Json?
+  oldValue   String?  // old value before change (JSON string)
+  newValue   String?  // new value after change (JSON string)
+  changes    String?  // detailed changes (JSON string)
   createdAt  DateTime @default(now())
 }
 
@@ -420,9 +433,10 @@ model Room {
   deletedBy String? // optional userId who deleted
   metadata  Json? // optional JSON metadata
 
-  plants        Plant[]    @relation("RoomPlants")
-  roomMovesFrom RoomMove[] @relation("RoomMoveFromRoom")
-  roomMovesTo   RoomMove[] @relation("RoomMoveToRoom")
+  plants          Plant[]         @relation("RoomPlants")
+  inventoryItems  InventoryItem[] @relation("InventoryItemRoom")
+  roomMovesFrom   RoomMove[]      @relation("RoomMoveFromRoom")
+  roomMovesTo     RoomMove[]      @relation("RoomMoveToRoom")
 
   @@unique([locationId, name])
   @@index([locationId])
@@ -584,6 +598,7 @@ model InventoryAdjustment {
   inventoryItemId String
   adjustmentType  String // increase, decrease
   quantity        Float
+  adjustmentGrams Float? // adjustment in grams
   reason          String
   isRedFlagged    Boolean   @default(false) // Warning for unusual adjustments
   createdBy       String
