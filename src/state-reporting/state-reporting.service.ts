@@ -58,7 +58,6 @@ export class StateReportingService {
         user: {
           select: {
             email: true,
-            lastName: true,
           },
         },
       },
@@ -405,7 +404,7 @@ export class StateReportingService {
             inventoryItem: {
               select: {
                 strainId: true,
-                type: true,
+                inventoryType: true,
               },
             },
           },
@@ -493,7 +492,7 @@ export class StateReportingService {
             ubi: true,
           },
         },
-        toLocation: {
+        receiverLocation: {
           select: {
             ubi: true,
           },
@@ -581,7 +580,7 @@ export class StateReportingService {
             inventoryItem: {
               select: {
                 strainId: true,
-                type: true,
+                inventoryType: true,
               },
             },
           },
@@ -708,7 +707,7 @@ export class StateReportingService {
       reportType: 'CUSTOM',
       generatedAt: new Date(),
       data: reportData,
-      totalRecords: Object.values(reportData.dataSources).reduce((sum: number, val: any) => sum + (typeof val === 'number' ? val : 0), 0),
+      totalRecords: Object.values(reportData.dataSources).reduce((sum: number, val: any) => sum + (typeof val === 'number' ? val : 0), 0) as number,
       summary: reportData.dataSources,
     };
   }

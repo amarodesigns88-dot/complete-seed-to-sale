@@ -28,7 +28,7 @@ export class StateLicenseeManagementService {
 
     // Verify license type exists
     const licenseType = await this.prisma.licenseType.findUnique({
-      where: { id: dto.licenseTypeId },
+      where: { id: String(dto.licenseTypeId) },
     });
 
     if (!licenseType) {
@@ -40,7 +40,7 @@ export class StateLicenseeManagementService {
       data: {
         name: dto.businessName,
         licenseNumber: dto.licenseNumber,
-        licenseTypeId: dto.licenseTypeId,
+        licenseType: dto.licenseType,
         address: dto.address,
         city: dto.city,
         state: dto.state,
@@ -55,7 +55,7 @@ export class StateLicenseeManagementService {
     await this.prisma.auditLog.create({
       data: {
         module: "State-licensee-management",
-        userId: stateUserId,
+        userId: String(stateUserId),
         actionType: 'CREATE_LICENSEE_ACCOUNT',
         entityType: 'Location',
         entityId: location.id,
@@ -88,8 +88,7 @@ export class StateLicenseeManagementService {
     stateUserId: number,
   ) {
     const location = await this.prisma.location.findUnique({
-      where: { id: locationId },
-      include: { licenseType: true },
+      where: { id: String(locationId) },
     });
 
     if (!location) {
@@ -98,7 +97,7 @@ export class StateLicenseeManagementService {
 
     // Update license status
     const updated = await this.prisma.location.update({
-      where: { id: locationId },
+      where: { id: String(locationId) },
       data: {
         isActive: dto.isActive,
       },
@@ -110,10 +109,10 @@ export class StateLicenseeManagementService {
     await this.prisma.auditLog.create({
       data: {
         module: "State-licensee-management",
-        userId: stateUserId,
+        userId: String(stateUserId),
         action: dto.isActive ? 'ACTIVATE_LICENSE' : 'DEACTIVATE_LICENSE',
         entityType: 'Location',
-        entityId: locationId,
+        entityId: String(locationId),
         details: {
           businessName: location.name,
           licenseNumber: location.licenseNumber,
@@ -138,7 +137,7 @@ export class StateLicenseeManagementService {
     stateUserId: number,
   ) {
     const location = await this.prisma.location.findUnique({
-      where: { id: locationId },
+      where: { id: String(locationId) },
     });
 
     if (!location) {
@@ -155,7 +154,7 @@ export class StateLicenseeManagementService {
 
     // Update location with inventory window
     const updated = await this.prisma.location.update({
-      where: { id: locationId },
+      where: { id: String(locationId) },
       data: {
         inventoryWindowStart: startDate,
         inventoryWindowEnd: endDate,
@@ -166,10 +165,10 @@ export class StateLicenseeManagementService {
     await this.prisma.auditLog.create({
       data: {
         module: "State-licensee-management",
-        userId: stateUserId,
+        userId: String(stateUserId),
         actionType: 'SET_INVENTORY_WINDOW',
         entityType: 'Location',
-        entityId: locationId,
+        entityId: String(locationId),
         details: {
           businessName: location.name,
           licenseNumber: location.licenseNumber,
@@ -196,8 +195,7 @@ export class StateLicenseeManagementService {
     stateUserId: number,
   ) {
     const location = await this.prisma.location.findUnique({
-      where: { id: locationId },
-      include: { licenseType: true },
+      where: { id: String(locationId) },
     });
 
     if (!location) {
@@ -206,7 +204,7 @@ export class StateLicenseeManagementService {
 
     // Verify new license type exists
     const newLicenseType = await this.prisma.licenseType.findUnique({
-      where: { id: dto.licenseTypeId },
+      where: { id: String(dto.licenseTypeId) },
     });
 
     if (!newLicenseType) {
@@ -215,9 +213,9 @@ export class StateLicenseeManagementService {
 
     // Update license type
     const updated = await this.prisma.location.update({
-      where: { id: locationId },
+      where: { id: String(locationId) },
       data: {
-        licenseTypeId: dto.licenseTypeId,
+        licenseType: dto.licenseType,
       },
       include: {
       },
@@ -227,10 +225,10 @@ export class StateLicenseeManagementService {
     await this.prisma.auditLog.create({
       data: {
         module: "State-licensee-management",
-        userId: stateUserId,
+        userId: String(stateUserId),
         actionType: 'ASSIGN_LICENSE_TYPE',
         entityType: 'Location',
-        entityId: locationId,
+        entityId: String(locationId),
         details: {
           businessName: location.name,
           licenseNumber: location.licenseNumber,
@@ -252,7 +250,7 @@ export class StateLicenseeManagementService {
 
   async getLicenseeAccount(locationId: number) {
     const location = await this.prisma.location.findUnique({
-      where: { id: locationId },
+      where: { id: String(locationId) },
       include: {
       },
     });
