@@ -146,6 +146,7 @@ async function main() {
         description: `${t.name} (default)`,
         unit: t.unit,
         isSource: t.isSource,
+        category: t.isSource ? 'Source' : 'General',
       },
     });
     typeMap[t.name] = it.id;

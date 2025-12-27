@@ -162,6 +162,7 @@ model InventoryItem {
   productName       String
   quantity          Float
   unit              String
+  price             Float?         // Price per unit
   usableWeight      Float? // For finished goods - weight that deducts from patient allotment
   lotId             String? // For items that are part of a lot
   sublotIdentifier  String? // For split inventory tracking (parent-child relationship)

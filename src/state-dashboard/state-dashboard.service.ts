@@ -29,11 +29,6 @@ export class StateDashboardService {
       where: {
         deletedAt: null,
         ...(licenseType && {
-          licenses: {
-            some: {
-              licenseType: {
-                name: licenseType,
-              },
             },
           },
         }),
@@ -143,29 +138,16 @@ export class StateDashboardService {
     const licensees = await this.prisma.location.findMany({
       where: {
         deletedAt: null,
-        ...(licenseType && {
-          licenses: {
-            some: {
-              licenseType: {
-                name: licenseType,
-              },
-            },
-          },
-        }),
+        ...(licenseType && { licenseType }),
       },
       include: {
-        licenses: {
-          include: {
-            licenseType: true,
-          },
-        },
-        inventory: {
+        InventoryItems: {
           where: { deletedAt: null },
         },
-        sales: {
+        Sales: {
           where: { deletedAt: null },
         },
-        transfersFrom: {
+        TransfersSent: {
           where: { deletedAt: null },
         },
       },
@@ -173,8 +155,8 @@ export class StateDashboardService {
     });
 
     return licensees.map((licensee) => {
-      const inventoryQuantity = licensee.inventory.reduce((sum, inv) => sum + inv.quantity, 0);
-      const salesAmount = licensee.sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+      const inventoryQuantity = licensee.InventoryItems.reduce((sum, inv) => sum + inv.quantity, 0);
+      const salesAmount = licensee.Sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
       const transferCount = licensee.transfersFrom.length;
 
       // Get red flags count from audit logs (simplified)
@@ -182,8 +164,8 @@ export class StateDashboardService {
 
       // Get last activity date
       const dates = [
-        ...licensee.inventory.map((i) => i.createdAt),
-        ...licensee.sales.map((s) => s.createdAt),
+        ...licensee.InventoryItems.map((i) => i.createdAt),
+        ...licensee.Sales.map((s) => s.createdAt),
         ...(licensee.TransfersSent || []).map((t) => t.createdAt),
       ];
       const lastActivityDate = dates.length > 0 ? new Date(Math.max(...dates.map((d) => d.getTime()))) : licensee.createdAt;
@@ -216,7 +198,7 @@ export class StateDashboardService {
     });
 
     return inventoryByType.map((item) => ({
-      inventoryTypeId: item.inventoryTypeId,
+      type: item.inventoryTypeId || "Unknown",
       totalQuantity: item._sum?.quantity || 0,
       licenseeCount: item._count?.locationId || 0,
       avgQuantityPerLicensee: (item._count?.locationId || 0) > 0 ? ((item._sum?.quantity || 0) / (item._count?.locationId || 1)) : 0,

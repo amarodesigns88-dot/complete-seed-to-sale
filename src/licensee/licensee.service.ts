@@ -107,7 +107,6 @@ export class LicenseeService {
         oldValue: location.licenseType,
         newValue: licenseType.name,
         ipAddress: 'unknown',
-        userAgent: 'system',
       },
     });
 
