@@ -63,13 +63,14 @@ ALTER TABLE "Sale" ADD COLUMN "reservationId" TEXT;
 CREATE INDEX "Sale_orderType_idx" ON "Sale"("orderType");
 
 -- Enhance Room for better inventory management
-ALTER TABLE "Room" ADD COLUMN "roomType" TEXT NOT NULL DEFAULT 'general';
+-- Note: roomType already exists from migration 20251223003611, so we update it instead
+ALTER TABLE "Room" ALTER COLUMN "roomType" SET DEFAULT 'general';
 ALTER TABLE "Room" ADD COLUMN "maxCapacity" INTEGER;
 ALTER TABLE "Room" ADD COLUMN "currentCapacity" INTEGER DEFAULT 0;
 ALTER TABLE "Room" ADD COLUMN "isActive" BOOLEAN NOT NULL DEFAULT true;
 
--- Add index for room type
-CREATE INDEX "Room_roomType_idx" ON "Room"("roomType");
+-- Add index for room type (if not exists)
+CREATE INDEX IF NOT EXISTS "Room_roomType_idx" ON "Room"("roomType");
 
 -- Enhance AuditLog for comprehensive tracking
 ALTER TABLE "AuditLog" ADD COLUMN "entityType" TEXT NOT NULL DEFAULT 'unknown';
