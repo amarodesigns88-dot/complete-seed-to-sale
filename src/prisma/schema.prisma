@@ -179,6 +179,7 @@ model InventoryItem {
   SaleItems     SaleItem[]     @relation("InventorySaleItems")
   Destructions  Destruction[]  @relation("InventoryDestructions")
   RoomMoves     RoomMove[]     @relation("InventoryRoomMoves")
+  Samples       Sample[]       @relation("SampleInventoryItem")
 
   conversionInputs  ConversionInput[]  @relation("InventoryConversionInputs")
   conversionOutputs ConversionOutput[] @relation("InventoryConversionOutputs")
@@ -269,13 +270,17 @@ model Transfer {
   manifestNumber     String    @unique
   status             String    @default("pending")
   notes              String?   // optional notes for transfer
+  estimatedArrival   DateTime? // estimated arrival time
+  receivedAt         DateTime? // when transfer was received
   voidedAt           DateTime?
   voidReason         String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   deletedAt          DateTime?
 
-  transferItems TransferItem[] @relation("TransferItems")
+  transferItems   TransferItem[]    @relation("TransferItems")
+  transferDrivers TransferDriver[]
+  transferVehicles TransferVehicle[]
 }
 
 model TransferItem {
@@ -371,6 +376,7 @@ model Sale {
   voidReason  String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
   saleItems SaleItem[]
   refunds   Refund[]
@@ -521,6 +527,7 @@ model Vehicle {
 model TransferDriver {
   id         String   @id @default(uuid())
   transferId String
+  transfer   Transfer @relation(fields: [transferId], references: [id])
   driverId   String
   driver     Driver   @relation(fields: [driverId], references: [id])
   createdAt  DateTime @default(now())
@@ -531,6 +538,7 @@ model TransferDriver {
 model TransferVehicle {
   id         String   @id @default(uuid())
   transferId String
+  transfer   Transfer @relation(fields: [transferId], references: [id])
   vehicleId  String
   vehicle    Vehicle  @relation(fields: [vehicleId], references: [id])
   createdAt  DateTime @default(now())
@@ -539,8 +547,9 @@ model TransferVehicle {
 }
 
 model Sample {
-  id                String    @id @default(uuid())
+  id                String         @id @default(uuid())
   inventoryItemId   String // Inventory item sample was extracted from
+  inventoryItem     InventoryItem  @relation("SampleInventoryItem", fields: [inventoryItemId], references: [id])
   labLocationId     String? // Lab assigned to test
   sampleBarcode     String    @unique
   panelId           String? // TestingPanel assigned

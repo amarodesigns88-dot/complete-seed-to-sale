@@ -88,8 +88,7 @@ export class TransferService {
         manifestNumber,
         senderLocationId: locationId,
         receiverLocationId: dto.receiverLocationId,
-        driverId: dto.driverId,
-        vehicleId: dto.vehicleId,
+        userId: dto.userId || 'system',
         status: TransferStatus.PENDING,
         estimatedArrival: new Date(dto.estimatedArrival),
         notes: dto.notes,
@@ -99,6 +98,20 @@ export class TransferService {
             quantity: item.quantity,
           })),
         },
+        ...(dto.driverId && {
+          transferDrivers: {
+            create: {
+              driverId: dto.driverId,
+            },
+          },
+        }),
+        ...(dto.vehicleId && {
+          transferVehicles: {
+            create: {
+              vehicleId: dto.vehicleId,
+            },
+          },
+        }),
       },
       include: {
         transferItems: {
@@ -106,10 +119,10 @@ export class TransferService {
             inventoryItem: true,
           },
         },
-        driver: true,
-        vehicle: true,
-        sourceLocation: true,
-        destinationLocation: true,
+        transferDrivers: { include: { driver: true } },
+        transferVehicles: { include: { vehicle: true } },
+        senderLocation: true,
+        receiverLocation: true,
       },
     });
 
@@ -128,6 +141,7 @@ export class TransferService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: 'Transfer',
         entityType: 'Transfer',
         entityId: transfer.id,
         actionType: 'CREATE',
@@ -167,10 +181,10 @@ export class TransferService {
               inventoryItem: true,
             },
           },
-          driver: true,
-          vehicle: true,
-          sourceLocation: true,
-          destinationLocation: true,
+          transferDrivers: { include: { driver: true } },
+          transferVehicles: { include: { vehicle: true } },
+          senderLocation: true,
+          receiverLocation: true,
         },
         skip: (page - 1) * limit,
         take: limit,
@@ -202,9 +216,9 @@ export class TransferService {
             inventoryItem: true,
           },
         },
-        driver: true,
-        vehicle: true,
-        sourceLocation: true,
+        transferDrivers: { include: { driver: true } },
+        transferVehicles: { include: { vehicle: true } },
+        senderLocation: true,
       },
       orderBy: { estimatedArrival: 'asc' },
     });
@@ -231,9 +245,9 @@ export class TransferService {
             inventoryItem: true,
           },
         },
-        driver: true,
-        vehicle: true,
-        sourceLocation: true,
+        transferDrivers: { include: { driver: true } },
+        transferVehicles: { include: { vehicle: true } },
+        senderLocation: true,
       },
       orderBy: { estimatedArrival: 'asc' },
     });
@@ -250,10 +264,10 @@ export class TransferService {
             inventoryItem: true,
           },
         },
-        driver: true,
-        vehicle: true,
-        sourceLocation: true,
-        destinationLocation: true,
+        transferDrivers: { include: { driver: true } },
+        transferVehicles: { include: { vehicle: true } },
+        senderLocation: true,
+        receiverLocation: true,
       },
     });
 
@@ -312,6 +326,8 @@ export class TransferService {
             locationId: locationId,
             inventoryTypeId: item.inventoryItem.inventoryTypeId,
             strainId: item.inventoryItem.strainId,
+            productName: item.inventoryItem.productName,
+            unit: item.inventoryItem.unit,
             quantity: item.quantity,
             roomId: item.inventoryItem.roomId, // Should be mapped to destination room
             barcode: `${item.inventoryItem.barcode}-TRF-${Date.now()}`,
@@ -346,18 +362,20 @@ export class TransferService {
             inventoryItem: true,
           },
         },
-        driver: true,
-        vehicle: true,
-        sourceLocation: true,
-        destinationLocation: true,
+        transferDrivers: { include: { driver: true } },
+        transferVehicles: { include: { vehicle: true } },
+        senderLocation: true,
+        receiverLocation: true,
       },
     });
 
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: 'Transfer',
         entityType: 'Transfer',
         entityId: transferId,
+        actionType: dto.status === 'RECEIVED' ? 'RECEIVE' : 'REJECT',
         action: dto.status === 'RECEIVED' ? 'RECEIVE' : 'REJECT',
         userId: 'system', // Should be from auth context
         changes: JSON.stringify({
@@ -404,6 +422,7 @@ export class TransferService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: 'Transfer',
         entityType: 'Driver',
         entityId: driver.id,
         actionType: 'CREATE',
@@ -463,6 +482,7 @@ export class TransferService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: 'Transfer',
         entityType: 'Vehicle',
         entityId: vehicle.id,
         actionType: 'CREATE',
