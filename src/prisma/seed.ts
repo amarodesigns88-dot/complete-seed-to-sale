@@ -71,15 +71,32 @@ async function main() {
   // Hash password for test user
   const passwordHash = await bcrypt.hash('TestPassword123!', 10);
 
-  // Create role first to ensure it exists
-  const role = await prisma.role.upsert({
-    where: { name: 'licensee_admin' },
-    update: {},
-    create: { 
-      name: 'licensee_admin',
-      description: 'Licensee Administrator Role',
-    }
-  });
+  // Create roles following the naming convention
+  const roles = [
+    // Admin role
+    { name: 'admin', description: 'System Administrator - Full access to everything' },
+    
+    // State roles
+    { name: 'state_admin', description: 'State Administrator' },
+    { name: 'state_auditor', description: 'State Auditor' },
+    { name: 'state_user', description: 'State User - General access to state modules' },
+    
+    // Licensee roles
+    { name: 'licensee_admin', description: 'Licensee Administrator' },
+    { name: 'licensee_manager', description: 'Licensee Manager' },
+    { name: 'licensee_grower', description: 'Licensee Grower' },
+    { name: 'licensee_user', description: 'Licensee User - General access' },
+  ];
+
+  const createdRoles: Record<string, any> = {};
+  for (const roleData of roles) {
+    const role = await prisma.role.upsert({
+      where: { name: roleData.name },
+      update: { description: roleData.description },
+      create: roleData,
+    });
+    createdRoles[roleData.name] = role;
+  }
 
   // Create or upsert user by email (keeps email uniqueness)
   const user = await prisma.user.upsert({
@@ -90,7 +107,7 @@ async function main() {
       parentLocationId: parentLocation.id,
       isActive: true,
       roles: { 
-        connect: [{ id: role.id }]
+        set: [{ id: createdRoles['licensee_admin'].id }]
       },
     },
     create: {
@@ -101,7 +118,7 @@ async function main() {
       parentLocationId: parentLocation.id,
       isActive: true,
       roles: { 
-        connect: [{ id: role.id }]
+        connect: [{ id: createdRoles['licensee_admin'].id }]
       },
     },
   });
