@@ -571,6 +571,7 @@ model Sample {
   notes             String? // Additional notes
   expectedCompletionDate DateTime? // Expected completion date
   remediationNotes  String? // Notes about remediation
+  assignedAt        DateTime? // Date sample was assigned to lab
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?

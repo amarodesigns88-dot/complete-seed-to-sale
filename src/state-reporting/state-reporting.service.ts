@@ -58,7 +58,6 @@ export class StateReportingService {
         user: {
           select: {
             email: true,
-            firstName: true,
             lastName: true,
           },
         },
@@ -314,7 +313,6 @@ export class StateReportingService {
         location: {
           select: {
             ubi: true,
-            businessName: true,
             licenseType: true,
           },
         },
@@ -400,14 +398,13 @@ export class StateReportingService {
         location: {
           select: {
             ubi: true,
-            businessName: true,
           },
         },
         saleItems: {
           include: {
             inventoryItem: {
               select: {
-                strain: true,
+                strainId: true,
                 type: true,
               },
             },
@@ -491,16 +488,14 @@ export class StateReportingService {
     const transfers = await this.prisma.transfer.findMany({
       where,
       include: {
-        fromLocation: {
+        senderLocation: {
           select: {
             ubi: true,
-            businessName: true,
           },
         },
         toLocation: {
           select: {
             ubi: true,
-            businessName: true,
           },
         },
         transferItems: true,
@@ -585,7 +580,7 @@ export class StateReportingService {
           include: {
             inventoryItem: {
               select: {
-                strain: true,
+                strainId: true,
                 type: true,
               },
             },

@@ -48,7 +48,6 @@ export class StateLicenseeManagementService {
         isActive: false, // Starts inactive until activated
       },
       include: {
-        licenseType: true,
       },
     });
 
@@ -104,7 +103,6 @@ export class StateLicenseeManagementService {
         isActive: dto.isActive,
       },
       include: {
-        licenseType: true,
       },
     });
 
@@ -128,7 +126,7 @@ export class StateLicenseeManagementService {
       id: updated.id,
       businessName: updated.name,
       licenseNumber: updated.licenseNumber,
-      licenseType: updated.licenseType.name,
+      licenseType: updated.licenseType,
       isActive: updated.isActive,
       updatedAt: updated.updatedAt,
     };
@@ -222,7 +220,6 @@ export class StateLicenseeManagementService {
         licenseTypeId: dto.licenseTypeId,
       },
       include: {
-        licenseType: true,
       },
     });
 
@@ -237,7 +234,7 @@ export class StateLicenseeManagementService {
         details: {
           businessName: location.name,
           licenseNumber: location.licenseNumber,
-          oldLicenseType: location.licenseType.name,
+          oldLicenseType: location.licenseType,
           newLicenseType: newLicenseType.name,
           effectiveDate: dto.effectiveDate,
         },
@@ -248,7 +245,7 @@ export class StateLicenseeManagementService {
       id: updated.id,
       businessName: updated.name,
       licenseNumber: updated.licenseNumber,
-      licenseType: updated.licenseType.name,
+      licenseType: updated.licenseType,
       updatedAt: updated.updatedAt,
     };
   }
@@ -257,7 +254,6 @@ export class StateLicenseeManagementService {
     const location = await this.prisma.location.findUnique({
       where: { id: locationId },
       include: {
-        licenseType: true,
       },
     });
 
@@ -269,12 +265,12 @@ export class StateLicenseeManagementService {
       id: location.id,
       businessName: location.name,
       licenseNumber: location.licenseNumber,
-      licenseType: location.licenseType.name,
+      licenseType: location.licenseType,
       isActive: location.isActive,
       address: location.address,
-      city: location.city,
-      state: location.state,
-      zipCode: location.zipCode,
+      city: null,
+      state: null,
+      zipCode: null,
       inventoryWindowStart: location.inventoryWindowStart,
       inventoryWindowEnd: location.inventoryWindowEnd,
       createdAt: location.createdAt,
@@ -308,7 +304,6 @@ export class StateLicenseeManagementService {
       this.prisma.location.findMany({
         where,
         include: {
-          licenseType: true,
         },
         skip,
         take: limit,
@@ -322,7 +317,7 @@ export class StateLicenseeManagementService {
         id: location.id,
         businessName: location.name,
         licenseNumber: location.licenseNumber,
-        licenseType: location.licenseType.name,
+        licenseType: location.licenseType,
         isActive: location.isActive,
         inventoryWindowStart: location.inventoryWindowStart,
         inventoryWindowEnd: location.inventoryWindowEnd,
