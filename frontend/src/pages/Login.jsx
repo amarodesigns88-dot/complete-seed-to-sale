@@ -6,41 +6,30 @@ import { authService } from '../services/api';
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [ubi, setUbi] = useState('');
   const [error, setError] = useState('');
-  const [step, setStep] = useState(1); // 1: credentials, 2: interface selection
-  const [userId, setUserId] = useState('');
-  const [allowedInterfaces, setAllowedInterfaces] = useState([]);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     
     try {
-      const response = await authService.login(email, password, ubi || null);
-      setUserId(response.data.userId);
-      setAllowedInterfaces(response.data.allowedInterfaces);
-      setStep(2);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
-    }
-  };
-
-  const handleInterfaceSelect = async (interfaceType) => {
-    setError('');
-    
-    try {
-      const response = await authService.selectInterface(userId, interfaceType, ubi || null);
-      const token = response.data.accessToken;
+      const response = await authService.login(email, password);
+      const { accessToken, user } = response.data;
       
       // Use AuthContext to store authentication state
-      login(token, { email, interfaceType }, userId, ubi || null);
+      // Store token, user info, userId, and locationId
+      login(accessToken, user, user.id, user.locationId);
       
+      // Navigate to dashboard
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Interface selection failed.');
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -51,66 +40,38 @@ function Login() {
         
         {error && <div className="error-message">{error}</div>}
         
-        {step === 1 ? (
-          <form onSubmit={handleLogin}>
-            <div className="form-group">
-              <label>Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label>UBI (Optional)</label>
-              <input
-                type="text"
-                value={ubi}
-                onChange={(e) => setUbi(e.target.value)}
-                placeholder="Business identifier"
-              />
-            </div>
-            
-            <button type="submit" className="button" style={{ width: '100%' }}>
-              Login
-            </button>
-          </form>
-        ) : (
-          <div>
-            <p style={{ marginBottom: '20px', textAlign: 'center' }}>
-              Select your interface:
-            </p>
-            {allowedInterfaces.map((iface) => (
-              <button
-                key={iface}
-                onClick={() => handleInterfaceSelect(iface)}
-                className="button"
-                style={{ width: '100%', marginBottom: '10px' }}
-              >
-                {iface.charAt(0).toUpperCase() + iface.slice(1)} Interface
-              </button>
-            ))}
-            <button
-              onClick={() => setStep(1)}
-              className="button"
-              style={{ width: '100%', marginTop: '20px', backgroundColor: '#95a5a6' }}
-            >
-              Back
-            </button>
+        <form onSubmit={handleLogin}>
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+            />
           </div>
-        )}
+          
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </div>
+          
+          <button 
+            type="submit" 
+            className="button" 
+            style={{ width: '100%' }}
+            disabled={loading}
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
       </div>
     </div>
   );

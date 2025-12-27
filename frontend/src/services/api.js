@@ -31,11 +31,8 @@ api.interceptors.response.use(
 
 // Auth services
 export const authService = {
-  login: (email, password, ubi = null) =>
-    api.post('/auth/login', { email, password, ubi }),
-  
-  selectInterface: (userId, interfaceSelection, ubi = null) =>
-    api.post('/auth/select-interface', { userId, interfaceSelection, ubi }),
+  login: (email, password) =>
+    api.post('/auth/login', { email, password }),
 };
 
 // Cultivation services
