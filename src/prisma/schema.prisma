@@ -564,6 +564,9 @@ model Sample {
   sampleType        String? // Type of sample
   labName           String? // Name of lab processing sample
   remediationType   String? // Type of remediation if applicable
+  sampleSizeGrams   Float? // Sample size in grams
+  labContactEmail   String? // Lab contact email
+  remediationReason String? // Reason for remediation
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?

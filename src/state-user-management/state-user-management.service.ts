@@ -33,7 +33,7 @@ export class StateUserManagementService {
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         name: `${dto.firstName} ${dto.lastName}`,
         
         status: 'active',
@@ -49,7 +49,6 @@ export class StateUserManagementService {
         id: true,
         email: true,
         name: true,
-        userType: true,
         status: true,
         metadata: true,
         createdAt: true,
@@ -113,7 +112,6 @@ export class StateUserManagementService {
           id: true,
           email: true,
           name: true,
-          userType: true,
           status: true,
           metadata: true,
           createdAt: true,
@@ -149,7 +147,6 @@ export class StateUserManagementService {
         id: true,
         email: true,
         name: true,
-        userType: true,
         status: true,
         metadata: true,
         permissions: true,
@@ -211,7 +208,6 @@ export class StateUserManagementService {
         id: true,
         email: true,
         name: true,
-        userType: true,
         status: true,
         metadata: true,
         createdAt: true,
@@ -300,7 +296,6 @@ export class StateUserManagementService {
         email: true,
         name: true,
         permissions: true,
-        accessibleUbis: true,
       },
     });
 

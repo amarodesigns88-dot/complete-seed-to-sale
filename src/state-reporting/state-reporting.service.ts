@@ -97,7 +97,6 @@ export class StateReportingService {
         actionType: 'GENERATE_COMPLIANCE_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'COMPLIANCE', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -189,7 +188,6 @@ export class StateReportingService {
         actionType: 'GENERATE_MARKET_ANALYTICS_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'MARKET_ANALYTICS', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -270,7 +268,6 @@ export class StateReportingService {
         actionType: 'GENERATE_LICENSEE_PERFORMANCE_REPORT',
         entityType: 'REPORT',
         entityId: dto.licenseeUbi || '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'LICENSEE_PERFORMANCE', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -358,7 +355,6 @@ export class StateReportingService {
         actionType: 'GENERATE_INVENTORY_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'INVENTORY', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -445,7 +441,6 @@ export class StateReportingService {
         actionType: 'GENERATE_SALES_ANALYTICS_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'SALES_ANALYTICS', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -539,7 +534,6 @@ export class StateReportingService {
         actionType: 'GENERATE_TRANSFER_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'TRANSFER', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -640,7 +634,6 @@ export class StateReportingService {
         actionType: 'GENERATE_TESTING_COMPLIANCE_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'TESTING_COMPLIANCE', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -711,7 +704,6 @@ export class StateReportingService {
         actionType: 'GENERATE_CUSTOM_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'CUSTOM', name: dto.name, dataSources: dto.dataSources, dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
