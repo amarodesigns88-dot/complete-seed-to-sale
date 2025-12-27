@@ -28,10 +28,7 @@ export class StateDashboardService {
     const totalLicensees = await this.prisma.location.count({
       where: {
         deletedAt: null,
-        ...(licenseType && {
-            },
-          },
-        }),
+        ...(licenseType && { licenseType }),
       },
     });
 
