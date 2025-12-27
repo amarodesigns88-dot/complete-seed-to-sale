@@ -110,7 +110,6 @@ export class InventoryService {
         adjustmentGrams: dto.adjustmentGrams,
         previousQuantityGrams: inventoryItem.quantity,
         newQuantityGrams: newQuantity,
-        reason: dto.reason,
         adjustmentType: dto.adjustmentType,
         isRedFlag,
       },
@@ -134,7 +133,6 @@ export class InventoryService {
         actionType: 'QUANTITY_ADJUSTMENT',
         oldValue: JSON.stringify({ quantity: inventoryItem.quantity }),
         newValue: JSON.stringify({ quantity: newQuantity }),
-        reason: dto.reason,
       },
     });
 
@@ -207,8 +205,9 @@ export class InventoryService {
     // Create split record
     const splitRecord = await this.prisma.inventorySplit.create({
       data: {
-        parentInventoryItemId: inventoryItemId,
-        reason: dto.reason,
+        parentInventoryId: inventoryItemId,
+        childInventoryIds: [], // Will be updated with split item IDs
+        createdBy: 'system',
       },
     });
 
@@ -234,7 +233,6 @@ export class InventoryService {
           splitCount: dto.splits.length,
           splitIds: splitItems.map(item => item.id),
         }),
-        reason: dto.reason,
       },
     });
 
@@ -328,8 +326,8 @@ export class InventoryService {
     // Create combination record
     const combinationRecord = await this.prisma.inventoryCombination.create({
       data: {
-        targetInventoryItemId: combinedItem.id,
-        reason: dto.reason,
+        targetInventoryId: combinedItem.id,
+        createdBy: 'system',
       },
     });
 
@@ -358,7 +356,6 @@ export class InventoryService {
           combinedId: combinedItem.id,
           totalWeight,
         }),
-        reason: dto.reason,
       },
     });
 
@@ -420,6 +417,9 @@ export class InventoryService {
     const lot = await this.prisma.lot.create({
       data: {
         batchNumber: dto.lotName,
+        inventoryTypeId: lotInventoryType.id,
+        totalQuantity: totalWeight,
+        unit: 'GRAM',
         locationId,
       },
     });
@@ -430,6 +430,8 @@ export class InventoryService {
       data: {
         barcode,
         inventoryTypeId: lotInventoryType.id,
+        productName: `Lot ${dto.lotName}`,
+        unit: 'GRAM',
         quantity: totalWeight,
         roomId: dto.targetRoomId,
         locationId,
@@ -517,6 +519,8 @@ export class InventoryService {
       data: {
         barcode: wasteBarcode,
         inventoryTypeId: wasteType.id,
+        productName: `Waste from ${inventoryItem.productName}`,
+        unit: inventoryItem.unit,
         quantity: amountToDestroy,
         roomId: inventoryItem.roomId,
         locationId,
@@ -555,7 +559,6 @@ export class InventoryService {
           wasteItemId: wasteItem.id,
           method: dto.destructionMethod,
         }),
-        reason: dto.reason,
       },
     });
 
@@ -585,8 +588,8 @@ export class InventoryService {
 
     // Check if operation is eligible for undo
     const undoableActions = ['ROOM_MOVE', 'QUANTITY_ADJUSTMENT', 'SPLIT', 'COMBINE'];
-    if (!undoableActions.includes(auditLog.action)) {
-      throw new BadRequestException(`Operation "${auditLog.action}" cannot be undone`);
+    if (!auditLog.action || !undoableActions.includes(auditLog.action)) {
+      throw new BadRequestException(`Operation "${auditLog.action || 'UNKNOWN'}" cannot be undone`);
     }
 
     // Parse old and new values
@@ -628,7 +631,6 @@ export class InventoryService {
         actionType: 'UNDO',
         oldValue: auditLog.newValue,
         newValue: auditLog.oldValue,
-        reason: dto.reason,
       },
     });
 
@@ -686,19 +688,11 @@ export class InventoryService {
   async getSplits(locationId: string, page: number = 1, limit: number = 50) {
     const skip = (page - 1) * limit;
 
+    // Note: InventorySplit doesn't have relation to InventoryItem, so we can't filter by locationId
     const [splits, total] = await Promise.all([
       this.prisma.inventorySplit.findMany({
         where: {
-          parentInventoryItem: {
-            locationId,
-          },
-        },
-        include: {
-          parentInventoryItem: {
-            include: {
-              inventoryType: true,
-            },
-          },
+          deletedAt: null,
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -706,9 +700,7 @@ export class InventoryService {
       }),
       this.prisma.inventorySplit.count({
         where: {
-          parentInventoryItem: {
-            locationId,
-          },
+          deletedAt: null,
         },
       }),
     ]);
@@ -730,20 +722,11 @@ export class InventoryService {
   async getCombinations(locationId: string, page: number = 1, limit: number = 50) {
     const skip = (page - 1) * limit;
 
+    // Note: InventoryCombination doesn't have relation to InventoryItem, so we can't filter by locationId
     const [combinations, total] = await Promise.all([
       this.prisma.inventoryCombination.findMany({
         where: {
-          targetInventoryItem: {
-            locationId,
-          },
-        },
-        include: {
-          targetInventoryItem: {
-            include: {
-              inventoryType: true,
-              room: true,
-            },
-          },
+          deletedAt: null,
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -751,9 +734,7 @@ export class InventoryService {
       }),
       this.prisma.inventoryCombination.count({
         where: {
-          targetInventoryItem: {
-            locationId,
-          },
+          deletedAt: null,
         },
       }),
     ]);
