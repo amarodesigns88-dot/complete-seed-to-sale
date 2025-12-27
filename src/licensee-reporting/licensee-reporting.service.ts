@@ -282,20 +282,20 @@ export class LicenseeReportingService {
         },
         ...(dto.locationId && {
           OR: [
-            { fromLocationId: dto.locationId },
-            { toLocationId: dto.locationId },
+            { senderLocationId: dto.locationId },
+            { receiverLocationId: dto.locationId },
           ],
         }),
-        ...(dto.direction === 'incoming' && { toLocationId: dto.locationId }),
-        ...(dto.direction === 'outgoing' && { fromLocationId: dto.locationId }),
+        ...(dto.direction === 'incoming' && { receiverLocationId: dto.locationId }),
+        ...(dto.direction === 'outgoing' && { senderLocationId: dto.locationId }),
         deletedAt: null,
       },
       include: {
-        fromLocation: true,
-        toLocation: true,
+        senderLocation: true,
+        receiverLocation: true,
         transferItems: {
           include: {
-            inventory: true,
+            inventoryItem: true,
           },
         },
       },
@@ -303,8 +303,8 @@ export class LicenseeReportingService {
 
     // Aggregate transfer data
     const totalTransfers = transfers.length;
-    const incomingTransfers = transfers.filter(t => t.toLocationId === dto.locationId).length;
-    const outgoingTransfers = transfers.filter(t => t.fromLocationId === dto.locationId).length;
+    const incomingTransfers = transfers.filter(t => t.receiverLocationId === dto.locationId).length;
+    const outgoingTransfers = transfers.filter(t => t.senderLocationId === dto.locationId).length;
 
     // Status breakdown
     const statusBreakdown = transfers.reduce((acc, transfer) => {
@@ -328,10 +328,10 @@ export class LicenseeReportingService {
       transfers: transfers.map(transfer => ({
         id: transfer.id,
         manifestNumber: transfer.manifestNumber,
-        from: transfer.fromLocation?.businessName,
-        to: transfer.toLocation?.businessName,
+        from: transfer.senderLocation?.name || 'Unknown',
+        to: transfer.receiverLocation?.name || 'Unknown',
         status: transfer.status,
-        items: transfer.transferItems.length,
+        items: transfer.transferItems?.length || 0,
         createdAt: transfer.createdAt,
       })),
     };
@@ -341,6 +341,8 @@ export class LicenseeReportingService {
       data: {
         module: "Licensee-reporting",
         actionType: 'GENERATE_TRANSFER_REPORT',
+        entityType: 'Report',
+        entityId: `TRANS_${Date.now()}`,
         userId,
         details: { startDate: startDate.toISOString(), endDate: endDate.toISOString(), locationId: dto.locationId },
       },
@@ -370,13 +372,13 @@ export class LicenseeReportingService {
           gte: startDate,
           lte: endDate,
         },
-        ...(dto.locationId && { locationId: dto.locationId }),
+        ...(dto.locationId && { inventoryItem: { locationId: dto.locationId } }),
         ...(dto.status && { status: dto.status }),
         deletedAt: null,
       },
       include: {
         testResults: true,
-        lab: true,
+        inventoryItem: { select: { locationId: true } },
       },
     });
 
@@ -401,11 +403,11 @@ export class LicenseeReportingService {
       },
       samples: samples.map(sample => ({
         id: sample.id,
-        sampleId: sample.sampleId,
+        sampleId: sample.id, // Sample doesn't have separate sampleId
         status: sample.status,
-        lab: sample.lab?.name,
-        testDate: sample.testDate,
-        results: sample.testResults.length,
+        lab: sample.labName || 'N/A', // Use labName field
+        testDate: sample.createdAt, // Use createdAt as test date
+        results: sample.testResults?.length || 0,
       })),
     };
 
@@ -414,6 +416,8 @@ export class LicenseeReportingService {
       data: {
         module: "Licensee-reporting",
         actionType: 'GENERATE_TESTING_REPORT',
+        entityType: 'Report',
+        entityId: `TEST_${Date.now()}`,
         userId,
         details: { startDate: startDate.toISOString(), endDate: endDate.toISOString(), locationId: dto.locationId },
       },
@@ -474,6 +478,8 @@ export class LicenseeReportingService {
       data: {
         module: "Licensee-reporting",
         actionType: 'GENERATE_FINANCIAL_REPORT',
+        entityType: 'Report',
+        entityId: `FIN_${Date.now()}`,
         userId,
         details: { startDate: startDate.toISOString(), endDate: endDate.toISOString(), locationId: dto.locationId },
       },
@@ -540,9 +546,9 @@ export class LicenseeReportingService {
     }
   }
 
-  private groupByPeriod(sales: any[], granularity: string, startDate: Date, endDate: Date): any[] {
+  private groupByPeriod(sales: any[], granularity: string, startDate: Date, endDate: Date): Array<{ period: string; revenue: number; transactions: number }> {
     // Simple implementation - group sales by period
-    const periods = [];
+    const periods: Array<{ period: string; revenue: number; transactions: number }> = [];
     let currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
