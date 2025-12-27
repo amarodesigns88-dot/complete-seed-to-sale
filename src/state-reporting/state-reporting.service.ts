@@ -33,7 +33,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.licenseeUbi) {
@@ -128,7 +128,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.licenseType) {
@@ -140,7 +140,7 @@ export class StateReportingService {
     // Get licensee count
     const totalLicensees = await this.prisma.location.count({
       where: {
-        isDeleted: false,
+        
         ...(dto.licenseType && { licenseType: dto.licenseType }),
       },
     });
@@ -215,7 +215,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.licenseeUbi) {
@@ -295,7 +295,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.inventoryType) {
@@ -385,7 +385,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.licenseType) {
@@ -405,7 +405,7 @@ export class StateReportingService {
         },
         saleItems: {
           include: {
-            inventory: {
+            inventoryItem: {
               select: {
                 strain: true,
                 type: true,
@@ -473,7 +473,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.status) {
@@ -563,7 +563,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.testType) {
@@ -583,7 +583,7 @@ export class StateReportingService {
       include: {
         sample: {
           include: {
-            inventory: {
+            inventoryItem: {
               select: {
                 strain: true,
                 type: true,
@@ -603,7 +603,7 @@ export class StateReportingService {
           gte: startDate,
           lte: endDate,
         },
-        isDeleted: false,
+        
       },
       _count: { id: true },
     });
@@ -676,7 +676,7 @@ export class StateReportingService {
           gte: startDate,
           lte: endDate,
         },
-        isDeleted: false,
+        
         ...dto.filters,
       };
 

@@ -422,6 +422,7 @@ model AuditLog {
   newValue   String?  // new value after change (JSON string)
   changes    String?  // detailed changes (JSON string)
   ipAddress  String?  // IP address of the user making the change
+  metadata   Json?    // additional metadata
   createdAt  DateTime @default(now())
 }
 
@@ -567,6 +568,9 @@ model Sample {
   sampleSizeGrams   Float? // Sample size in grams
   labContactEmail   String? // Lab contact email
   remediationReason String? // Reason for remediation
+  notes             String? // Additional notes
+  expectedCompletionDate DateTime? // Expected completion date
+  remediationNotes  String? // Notes about remediation
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
