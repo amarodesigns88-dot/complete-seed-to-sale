@@ -157,7 +157,7 @@ export class StateDashboardService {
     return licensees.map((licensee) => {
       const inventoryQuantity = licensee.InventoryItems.reduce((sum, inv) => sum + inv.quantity, 0);
       const salesAmount = licensee.Sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-      const transferCount = licensee.transfersFrom.length;
+      const transferCount = (licensee.TransfersSent || []).length;
 
       // Get red flags count from audit logs (simplified)
       const redFlagCount = 0; // Would need separate query
@@ -171,7 +171,7 @@ export class StateDashboardService {
       const lastActivityDate = dates.length > 0 ? new Date(Math.max(...dates.map((d) => d.getTime()))) : licensee.createdAt;
 
       return {
-        ubi: licensee.ubi,
+        ubi: licensee.ubi || '',
         name: licensee.name,
         licenseType: licensee.licenseType || 'Unknown',
         inventoryQuantity,
