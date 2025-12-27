@@ -73,18 +73,19 @@ ALTER TABLE "Room" ADD COLUMN "isActive" BOOLEAN NOT NULL DEFAULT true;
 CREATE INDEX IF NOT EXISTS "Room_roomType_idx" ON "Room"("roomType");
 
 -- Enhance AuditLog for comprehensive tracking
-ALTER TABLE "AuditLog" ADD COLUMN "entityType" TEXT NOT NULL DEFAULT 'unknown';
-ALTER TABLE "AuditLog" ADD COLUMN "entityId" TEXT;
+-- Note: entityType and entityId already exist from init migration, so we skip them
+-- ALTER TABLE "AuditLog" ADD COLUMN "entityType" TEXT NOT NULL DEFAULT 'unknown'; -- Already exists
+-- ALTER TABLE "AuditLog" ADD COLUMN "entityId" TEXT; -- Already exists
 ALTER TABLE "AuditLog" ADD COLUMN "oldValues" JSONB;
 ALTER TABLE "AuditLog" ADD COLUMN "newValues" JSONB;
 ALTER TABLE "AuditLog" ADD COLUMN "ipAddress" TEXT;
 ALTER TABLE "AuditLog" ADD COLUMN "userAgent" TEXT;
 
--- Add indexes for audit log querying
-CREATE INDEX "AuditLog_entityType_idx" ON "AuditLog"("entityType");
-CREATE INDEX "AuditLog_entityId_idx" ON "AuditLog"("entityId");
-CREATE INDEX "AuditLog_userId_idx" ON "AuditLog"("userId");
-CREATE INDEX "AuditLog_timestamp_idx" ON "AuditLog"("timestamp");
+-- Add indexes for audit log querying (use IF NOT EXISTS for idempotency)
+CREATE INDEX IF NOT EXISTS "AuditLog_entityType_idx" ON "AuditLog"("entityType");
+CREATE INDEX IF NOT EXISTS "AuditLog_entityId_idx" ON "AuditLog"("entityId");
+CREATE INDEX IF NOT EXISTS "AuditLog_userId_idx" ON "AuditLog"("userId");
+CREATE INDEX IF NOT EXISTS "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");
 
 -- Add harvest type tracking to Plant
 ALTER TABLE "Plant" ADD COLUMN "harvestType" TEXT;
