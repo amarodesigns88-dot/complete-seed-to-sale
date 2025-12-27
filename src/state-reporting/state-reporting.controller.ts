@@ -15,13 +15,13 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '@prisma/client';
+
 
 @ApiTags('State Reporting')
 @ApiBearerAuth()
 @Controller('state-reporting')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.STATE)
+@Roles("STATE")
 export class StateReportingController {
   constructor(private readonly stateReportingService: StateReportingService) {}
 

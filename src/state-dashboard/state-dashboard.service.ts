@@ -184,14 +184,14 @@ export class StateDashboardService {
       const dates = [
         ...licensee.inventory.map((i) => i.createdAt),
         ...licensee.sales.map((s) => s.createdAt),
-        ...licensee.transfersFrom.map((t) => t.createdAt),
+        ...(licensee.TransfersSent || []).map((t) => t.createdAt),
       ];
       const lastActivityDate = dates.length > 0 ? new Date(Math.max(...dates.map((d) => d.getTime()))) : licensee.createdAt;
 
       return {
         ubi: licensee.ubi,
         name: licensee.name,
-        licenseType: licensee.licenses[0]?.licenseType?.name || 'Unknown',
+        licenseType: licensee.licenseType || 'Unknown',
         inventoryQuantity,
         salesAmount,
         transferCount,
@@ -203,7 +203,7 @@ export class StateDashboardService {
 
   async getInventorySummary(filters: DashboardFilterDto): Promise<InventorySummaryDto[]> {
     const inventoryByType = await this.prisma.inventoryItem.groupBy({
-      by: ['type'],
+      by: ['inventoryTypeId'],
       _sum: {
         quantity: true,
       },
@@ -216,10 +216,10 @@ export class StateDashboardService {
     });
 
     return inventoryByType.map((item) => ({
-      type: item.type,
-      totalQuantity: item._sum.quantity || 0,
-      licenseeCount: item._count.locationId,
-      avgQuantityPerLicensee: item._count.locationId > 0 ? (item._sum.quantity || 0) / item._count.locationId : 0,
+      inventoryTypeId: item.inventoryTypeId,
+      totalQuantity: item._sum?.quantity || 0,
+      licenseeCount: item._count?.locationId || 0,
+      avgQuantityPerLicensee: (item._count?.locationId || 0) > 0 ? ((item._sum?.quantity || 0) / (item._count?.locationId || 1)) : 0,
     }));
   }
 

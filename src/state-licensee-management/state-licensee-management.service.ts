@@ -40,11 +40,8 @@ export class StateLicenseeManagementService {
       data: {
         name: dto.businessName,
         licenseNumber: dto.licenseNumber,
-        licenseType: dto.licenseType,
+        licenseType: String(dto.licenseTypeId),
         address: dto.address,
-        city: dto.city,
-        state: dto.state,
-        zipCode: dto.zipCode,
         isActive: false, // Starts inactive until activated
       },
       include: {
@@ -111,6 +108,7 @@ export class StateLicenseeManagementService {
         module: "State-licensee-management",
         userId: String(stateUserId),
         action: dto.isActive ? 'ACTIVATE_LICENSE' : 'DEACTIVATE_LICENSE',
+        actionType: dto.isActive ? 'ACTIVATE_LICENSE' : 'DEACTIVATE_LICENSE',
         entityType: 'Location',
         entityId: String(locationId),
         details: {
@@ -215,7 +213,7 @@ export class StateLicenseeManagementService {
     const updated = await this.prisma.location.update({
       where: { id: String(locationId) },
       data: {
-        licenseType: dto.licenseType,
+        licenseType: String(dto.licenseTypeId),
       },
       include: {
       },

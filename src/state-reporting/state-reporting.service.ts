@@ -309,12 +309,6 @@ export class StateReportingService {
     const inventory = await this.prisma.inventoryItem.findMany({
       where,
       include: {
-        location: {
-          select: {
-            ubi: true,
-            licenseType: true,
-          },
-        },
         room: {
           select: {
             name: true,
@@ -394,11 +388,6 @@ export class StateReportingService {
     const sales = await this.prisma.sale.findMany({
       where,
       include: {
-        location: {
-          select: {
-            ubi: true,
-          },
-        },
         saleItems: {
           include: {
             inventoryItem: {
