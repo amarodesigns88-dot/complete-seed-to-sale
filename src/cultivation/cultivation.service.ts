@@ -309,7 +309,6 @@ export class CultivationService {
       data: {
         module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'plant',
         entityId: plantId,
         actionType: 'update',
@@ -335,7 +334,6 @@ export class CultivationService {
       data: {
         module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'plant',
         entityId: plantId,
         actionType: 'delete',
@@ -379,7 +377,6 @@ export class CultivationService {
       data: {
         module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'harvest',
         entityId: harvest.id,
         actionType: 'create',
@@ -733,7 +730,6 @@ export class CultivationService {
       data: {
         module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: plantId ? 'plant' : 'inventoryItem',
         entityId: plantId ?? (inventoryItemId as string),
         actionType: 'room_move',
@@ -768,7 +764,6 @@ export class CultivationService {
       data: {
         module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'room',
         entityId: room.id,
         actionType: 'create',
@@ -822,7 +817,6 @@ export class CultivationService {
       data: {
         module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'plant',
         entityId: plantId,
         actionType: 'convert_to_mother',
@@ -871,7 +865,7 @@ export class CultivationService {
     const cloneInventory = await this.prisma.inventoryItem.create({
       data: {
         locationId,
-        inventoryType: { connect: { id: 'clone' } }, // Assuming 'clone' is a valid inventory type ID
+        inventoryTypeId: 'clone', // Assuming 'clone' is a valid inventory type ID
         inventoryTypeName: 'Clone',
         productName: `Clones from Mother ${motherPlant.strain}`,
         quantity: data.quantity,
@@ -899,7 +893,6 @@ export class CultivationService {
       data: {
         module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'plant',
         entityId: motherPlantId,
         actionType: 'generate_clones',
@@ -955,7 +948,7 @@ export class CultivationService {
     const seedInventory = await this.prisma.inventoryItem.create({
       data: {
         locationId,
-        inventoryType: { connect: { id: 'seed' } }, // Assuming 'seed' is a valid inventory type ID
+        inventoryTypeId: 'seed', // Assuming 'seed' is a valid inventory type ID
         inventoryTypeName: 'Seed',
         productName: `Seeds from Mother ${motherPlant.strain}`,
         quantity: data.quantity,
@@ -982,7 +975,6 @@ export class CultivationService {
       data: {
         module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'plant',
         entityId: motherPlantId,
         actionType: 'generate_seeds',
@@ -1064,7 +1056,6 @@ export class CultivationService {
       data: {
         module: "Cultivation",
         userId: userId ?? null,
-        module: auditLog.module,
         entityType: auditLog.entityType,
         entityId: auditLog.entityId,
         actionType: 'undo',

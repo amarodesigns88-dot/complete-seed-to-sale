@@ -85,6 +85,7 @@ export class ConversionService {
       // Create audit log
       await tx.auditLog.create({
         data: {
+          module: 'Conversion',
           userId,
           locationId,
           actionType: 'CONVERSION',
@@ -185,6 +186,7 @@ export class ConversionService {
       // Create audit log
       await tx.auditLog.create({
         data: {
+          module: 'Conversion',
           userId,
           locationId,
           actionType: 'CONVERSION',
@@ -291,6 +293,7 @@ export class ConversionService {
       // Create audit log
       await tx.auditLog.create({
         data: {
+          module: 'Conversion',
           userId,
           locationId,
           actionType: 'CONVERSION',
@@ -326,7 +329,7 @@ export class ConversionService {
       where: { id: conversionId },
       include: {
         inventoryType: true,
-        strain: true,
+        
         room: true,
       },
     });
@@ -346,7 +349,7 @@ export class ConversionService {
 
     return {
       ...conversion,
-      conversionDetails: auditLog ? JSON.parse(auditLog.details) : null,
+      conversionDetails: auditLog ? typeof auditLog.details === 'string' ? JSON.parse(auditLog.details) : auditLog.details : null,
     };
   }
 
@@ -390,7 +393,7 @@ export class ConversionService {
     let filteredLogs = auditLogs;
     if (conversionType) {
       filteredLogs = auditLogs.filter((log) => {
-        const details = JSON.parse(log.details);
+        const details = typeof log.details === 'string' ? JSON.parse(log.details) : log.details;
         return details.conversionType === conversionType;
       });
     }
@@ -404,7 +407,7 @@ export class ConversionService {
       },
       include: {
         inventoryType: true,
-        strain: true,
+        
         room: true,
       },
     });
@@ -414,7 +417,7 @@ export class ConversionService {
       const auditLog = filteredLogs.find((log) => log.entityId === conversion.id);
       return {
         ...conversion,
-        conversionDetails: auditLog ? JSON.parse(auditLog.details) : null,
+        conversionDetails: auditLog ? typeof auditLog.details === 'string' ? JSON.parse(auditLog.details) : auditLog.details : null,
       };
     });
 

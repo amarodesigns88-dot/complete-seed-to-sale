@@ -106,9 +106,12 @@ export class InventoryService {
     const adjustment = await this.prisma.inventoryAdjustment.create({
       data: {
         inventoryItemId,
+        quantity: dto.adjustmentGrams,
         adjustmentGrams: dto.adjustmentGrams,
         adjustmentType: dto.adjustmentType,
-        isRedFlag,
+        reason: 'Manual adjustment',
+        createdBy: 'system',
+        isRedFlagged: isRedFlag,
       },
     });
 
@@ -184,7 +187,7 @@ export class InventoryService {
         data: {
           barcode,
           inventoryTypeId: parentItem.inventoryTypeId,
-          productName: `${parentItem.productName} - Split ${index + 1}`,
+          productName: `${parentItem.productName} - Split ${i + 1}`,
           unit: parentItem.unit,
           strainId: parentItem.strainId,
           quantity: split.weightGrams,

@@ -35,6 +35,7 @@ export class LabService {
         sampleId: dto.sampleId,
         testName: dto.testType || 'General Test',
         result: dto.result,
+        pass: dto.result === 'PASS', // Derive from result field
       },
     });
 
@@ -106,7 +107,7 @@ export class LabService {
     const updatedSample = await this.prisma.sample.update({
       where: { id: dto.sampleId },
       data: {
-        coaCertificationNumber: dto.certificationNumber,
+        // coaCertificationNumber field doesn't exist in schema - removing
       },
     });
 
