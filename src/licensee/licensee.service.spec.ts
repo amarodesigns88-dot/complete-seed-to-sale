@@ -195,7 +195,7 @@ describe('LicenseeService - Sprints 3-4 Enhancements', () => {
           data: expect.objectContaining({
             entityType: 'Location',
             entityId: 'loc-123',
-            action: 'UPDATE_LICENSE_TYPE',
+            actionType: 'UPDATE_LICENSE_TYPE',
           }),
         }),
       );

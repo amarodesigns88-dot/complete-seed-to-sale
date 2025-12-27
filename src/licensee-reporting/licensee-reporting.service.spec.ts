@@ -174,7 +174,7 @@ describe('LicenseeReportingService', () => {
 
       await service.generateInventoryReport(dto, mockUserId);
 
-      expect(prisma.inventory.findMany).toHaveBeenCalledWith(
+      expect(prisma.inventoryItem.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             quantity: {

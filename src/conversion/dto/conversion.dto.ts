@@ -111,7 +111,7 @@ export class ExtractionToFinishedConversionDto {
   @ApiProperty({ description: 'Usable weight in grams for finished goods' })
   @IsNumber()
   @Min(0.01)
-  usableWeightGrams: number;
+  usableWeight: number;
 
   @ApiProperty({ description: 'Room ID where conversion takes place' })
   @IsUUID()

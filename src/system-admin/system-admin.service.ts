@@ -37,8 +37,8 @@ export class SystemAdminService {
     await this.prisma.auditLog.create({
       data: {
         userId: adminUserId,
-        action: 'UPDATE_SYSTEM_CONFIG',
-        entity: 'SystemConfig',
+        actionType: 'UPDATE_SYSTEM_CONFIG',
+        entityType: 'SystemConfig',
         entityId: 'system',
         changes: JSON.stringify(updateDto),
         ipAddress: '0.0.0.0',
@@ -213,8 +213,8 @@ export class SystemAdminService {
     await this.prisma.auditLog.create({
       data: {
         userId: adminUserId,
-        action: 'TRIGGER_BACKUP',
-        entity: 'System',
+        actionType: 'TRIGGER_BACKUP',
+        entityType: 'System',
         entityId: backupId,
         changes: JSON.stringify(backupDto),
         ipAddress: '0.0.0.0',
@@ -275,8 +275,8 @@ export class SystemAdminService {
     await this.prisma.auditLog.create({
       data: {
         userId: adminUserId,
-        action: 'CLEAR_CACHE',
-        entity: 'System',
+        actionType: 'CLEAR_CACHE',
+        entityType: 'System',
         entityId: 'cache',
         changes: JSON.stringify({ cleared: true }),
         ipAddress: '0.0.0.0',

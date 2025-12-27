@@ -61,7 +61,7 @@ export class InventoryService {
       data: {
         entityType: 'InventoryItem',
         entityId: inventoryItemId,
-        action: 'ROOM_MOVE',
+        actionType: 'ROOM_MOVE',
         oldValue: JSON.stringify({ roomId: inventoryItem.roomId, roomName: inventoryItem.room?.name }),
         newValue: JSON.stringify({ roomId: targetRoom.id, roomName: targetRoom.name }),
         reason: dto.reason || 'Room movement',
@@ -92,14 +92,14 @@ export class InventoryService {
       throw new NotFoundException('Inventory item not found');
     }
 
-    const newQuantity = inventoryItem.quantityGrams + dto.adjustmentGrams;
+    const newQuantity = inventoryItem.quantity + dto.adjustmentGrams;
 
     if (newQuantity < 0) {
       throw new BadRequestException('Adjustment would result in negative quantity');
     }
 
     // Calculate adjustment percentage
-    const adjustmentPercent = Math.abs((dto.adjustmentGrams / inventoryItem.quantityGrams) * 100);
+    const adjustmentPercent = Math.abs((dto.adjustmentGrams / inventoryItem.quantity) * 100);
     const isRedFlag = adjustmentPercent > 10; // Red flag if adjustment > 10%
 
     // Create adjustment record
@@ -107,7 +107,7 @@ export class InventoryService {
       data: {
         inventoryItemId,
         adjustmentGrams: dto.adjustmentGrams,
-        previousQuantityGrams: inventoryItem.quantityGrams,
+        previousQuantityGrams: inventoryItem.quantity,
         newQuantityGrams: newQuantity,
         reason: dto.reason,
         adjustmentType: dto.adjustmentType,
@@ -119,7 +119,7 @@ export class InventoryService {
     const updated = await this.prisma.inventoryItem.update({
       where: { id: inventoryItemId },
       data: {
-        quantityGrams: newQuantity,
+        quantity: newQuantity,
       },
       include: { inventoryType: true, room: true },
     });
@@ -129,9 +129,9 @@ export class InventoryService {
       data: {
         entityType: 'InventoryItem',
         entityId: inventoryItemId,
-        action: 'QUANTITY_ADJUSTMENT',
-        oldValue: JSON.stringify({ quantityGrams: inventoryItem.quantityGrams }),
-        newValue: JSON.stringify({ quantityGrams: newQuantity }),
+        actionType: 'QUANTITY_ADJUSTMENT',
+        oldValue: JSON.stringify({ quantity: inventoryItem.quantity }),
+        newValue: JSON.stringify({ quantity: newQuantity }),
         reason: dto.reason,
       },
     });
@@ -167,7 +167,7 @@ export class InventoryService {
 
     // Validate total split weight
     const totalSplitWeight = dto.splits.reduce((sum, split) => sum + split.weightGrams, 0);
-    if (totalSplitWeight > parentItem.quantityGrams) {
+    if (totalSplitWeight > parentItem.quantity) {
       throw new BadRequestException('Total split weight exceeds parent item weight');
     }
 
@@ -188,13 +188,13 @@ export class InventoryService {
           barcode,
           inventoryTypeId: parentItem.inventoryTypeId,
           strainId: parentItem.strainId,
-          quantityGrams: split.weightGrams,
+          quantity: split.weightGrams,
           roomId: split.roomId || parentItem.roomId,
           locationId,
           lotId: parentItem.lotId,
           sublotIdentifier: sublotId,
-          usableWeightGrams: parentItem.usableWeightGrams 
-            ? (split.weightGrams / parentItem.quantityGrams) * parentItem.usableWeightGrams 
+          usableWeight: parentItem.usableWeight 
+            ? (split.weightGrams / parentItem.quantity) * parentItem.usableWeight 
             : null,
         },
       });
@@ -211,11 +211,11 @@ export class InventoryService {
     });
 
     // Update parent item quantity
-    const remainingQuantity = parentItem.quantityGrams - totalSplitWeight;
+    const remainingQuantity = parentItem.quantity - totalSplitWeight;
     await this.prisma.inventoryItem.update({
       where: { id: inventoryItemId },
       data: {
-        quantityGrams: remainingQuantity,
+        quantity: remainingQuantity,
       },
     });
 
@@ -224,8 +224,8 @@ export class InventoryService {
       data: {
         entityType: 'InventoryItem',
         entityId: inventoryItemId,
-        action: 'SPLIT',
-        oldValue: JSON.stringify({ quantityGrams: parentItem.quantityGrams }),
+        actionType: 'SPLIT',
+        oldValue: JSON.stringify({ quantity: parentItem.quantity }),
         newValue: JSON.stringify({ 
           remainingQuantity, 
           splitCount: dto.splits.length,
@@ -275,8 +275,8 @@ export class InventoryService {
     }
 
     // Calculate total weight
-    const totalWeight = items.reduce((sum, item) => sum + item.quantityGrams, 0);
-    const totalUsableWeight = items.reduce((sum, item) => sum + (item.usableWeightGrams || 0), 0);
+    const totalWeight = items.reduce((sum, item) => sum + item.quantity, 0);
+    const totalUsableWeight = items.reduce((sum, item) => sum + (item.usableWeight || 0), 0);
 
     let combinedItem;
 
@@ -297,9 +297,9 @@ export class InventoryService {
       combinedItem = await this.prisma.inventoryItem.update({
         where: { id: dto.targetInventoryItemId },
         data: {
-          quantityGrams: targetItem.quantityGrams + totalWeight,
-          usableWeightGrams: targetItem.usableWeightGrams
-            ? targetItem.usableWeightGrams + totalUsableWeight
+          quantity: targetItem.quantity + totalWeight,
+          usableWeight: targetItem.usableWeight
+            ? targetItem.usableWeight + totalUsableWeight
             : totalUsableWeight > 0 ? totalUsableWeight : null,
         },
       });
@@ -313,8 +313,8 @@ export class InventoryService {
           barcode,
           inventoryTypeId: firstTypeId,
           strainId: items[0].strainId,
-          quantityGrams: totalWeight,
-          usableWeightGrams: totalUsableWeight > 0 ? totalUsableWeight : null,
+          quantity: totalWeight,
+          usableWeight: totalUsableWeight > 0 ? totalUsableWeight : null,
           roomId: targetRoomId,
           locationId,
           lotId: items[0].lotId,
@@ -345,10 +345,10 @@ export class InventoryService {
       data: {
         entityType: 'InventoryItem',
         entityId: combinedItem.id,
-        action: 'COMBINE',
+        actionType: 'COMBINE',
         oldValue: JSON.stringify({ 
           sourceIds: dto.inventoryItemIds,
-          sourceWeights: items.map(item => ({ id: item.id, weight: item.quantityGrams })),
+          sourceWeights: items.map(item => ({ id: item.id, weight: item.quantity })),
         }),
         newValue: JSON.stringify({ 
           combinedId: combinedItem.id,
@@ -400,7 +400,7 @@ export class InventoryService {
     }
 
     // Calculate total weight
-    const totalWeight = items.reduce((sum, item) => sum + item.quantityGrams, 0);
+    const totalWeight = items.reduce((sum, item) => sum + item.quantity, 0);
 
     // Find lot inventory type
     const lotTypeName = dto.lotType || 'Lot of Dry Flower';
@@ -426,7 +426,7 @@ export class InventoryService {
       data: {
         barcode,
         inventoryTypeId: lotInventoryType.id,
-        quantityGrams: totalWeight,
+        quantity: totalWeight,
         roomId: dto.targetRoomId,
         locationId,
         lotId: lot.id,
@@ -448,10 +448,10 @@ export class InventoryService {
       data: {
         entityType: 'Lot',
         entityId: lot.id,
-        action: 'CREATE_LOT',
+        actionType: 'CREATE_LOT',
         oldValue: JSON.stringify({ 
           sourceIds: dto.inventoryItemIds,
-          sourceWeights: items.map(item => ({ id: item.id, weight: item.quantityGrams })),
+          sourceWeights: items.map(item => ({ id: item.id, weight: item.quantity })),
         }),
         newValue: JSON.stringify({ 
           lotId: lot.id,
@@ -491,9 +491,9 @@ export class InventoryService {
       throw new NotFoundException('Inventory item not found');
     }
 
-    const amountToDestroy = dto.amountGrams || inventoryItem.quantityGrams;
+    const amountToDestroy = dto.amountGrams || inventoryItem.quantity;
 
-    if (amountToDestroy > inventoryItem.quantityGrams) {
+    if (amountToDestroy > inventoryItem.quantity) {
       throw new BadRequestException('Destruction amount exceeds available quantity');
     }
 
@@ -512,14 +512,14 @@ export class InventoryService {
       data: {
         barcode: wasteBarcode,
         inventoryTypeId: wasteType.id,
-        quantityGrams: amountToDestroy,
+        quantity: amountToDestroy,
         roomId: inventoryItem.roomId,
         locationId,
       },
     });
 
     // Update or delete original item
-    if (amountToDestroy === inventoryItem.quantityGrams) {
+    if (amountToDestroy === inventoryItem.quantity) {
       // Full destruction - soft delete
       await this.prisma.inventoryItem.update({
         where: { id: inventoryItemId },
@@ -530,7 +530,7 @@ export class InventoryService {
       await this.prisma.inventoryItem.update({
         where: { id: inventoryItemId },
         data: {
-          quantityGrams: inventoryItem.quantityGrams - amountToDestroy,
+          quantity: inventoryItem.quantity - amountToDestroy,
         },
       });
     }
@@ -540,9 +540,9 @@ export class InventoryService {
       data: {
         entityType: 'InventoryItem',
         entityId: inventoryItemId,
-        action: 'DESTROY',
+        actionType: 'DESTROY',
         oldValue: JSON.stringify({ 
-          quantityGrams: inventoryItem.quantityGrams,
+          quantity: inventoryItem.quantity,
         }),
         newValue: JSON.stringify({ 
           destroyedAmount: amountToDestroy,
@@ -604,9 +604,9 @@ export class InventoryService {
         // Revert quantity adjustment
         await this.prisma.inventoryItem.update({
           where: { id: auditLog.entityId },
-          data: { quantityGrams: oldValue.quantityGrams },
+          data: { quantity: oldValue.quantity },
         });
-        undoResult = { message: 'Quantity adjustment reverted', quantityGrams: oldValue.quantityGrams };
+        undoResult = { message: 'Quantity adjustment reverted', quantity: oldValue.quantity };
         break;
 
       default:
@@ -618,7 +618,7 @@ export class InventoryService {
       data: {
         entityType: auditLog.entityType,
         entityId: auditLog.entityId,
-        action: 'UNDO',
+        actionType: 'UNDO',
         oldValue: auditLog.newValue,
         newValue: auditLog.oldValue,
         reason: dto.reason,

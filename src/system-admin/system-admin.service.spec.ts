@@ -70,8 +70,8 @@ describe('SystemAdminService', () => {
       expect(prisma.auditLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           userId: adminUserId,
-          action: 'UPDATE_SYSTEM_CONFIG',
-          entity: 'SystemConfig',
+          actionType: 'UPDATE_SYSTEM_CONFIG',
+          entityType: 'SystemConfig',
         }),
       });
     });
@@ -158,8 +158,8 @@ describe('SystemAdminService', () => {
         {
           id: '1',
           userId: 'user-123',
-          action: 'CREATE',
-          entity: 'User',
+          actionType: 'CREATE',
+          entityType: 'User',
           entityId: 'entity-1',
           changes: '{}',
           ipAddress: '127.0.0.1',
@@ -204,7 +204,7 @@ describe('SystemAdminService', () => {
 
     it('should filter by action', async () => {
       const filterDto = {
-        action: 'CREATE',
+        actionType: 'CREATE',
         page: 1,
         limit: 50,
       };
@@ -217,7 +217,7 @@ describe('SystemAdminService', () => {
       expect(prisma.auditLog.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            action: 'CREATE',
+            actionType: 'CREATE',
           }),
         }),
       );
@@ -301,8 +301,8 @@ describe('SystemAdminService', () => {
       expect(prisma.auditLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           userId: adminUserId,
-          action: 'TRIGGER_BACKUP',
-          entity: 'System',
+          actionType: 'TRIGGER_BACKUP',
+          entityType: 'System',
         }),
       });
     });
@@ -331,8 +331,8 @@ describe('SystemAdminService', () => {
       const mockLogs = [
         {
           id: '1',
-          action: 'RED_FLAG_CREATED',
-          entity: 'RedFlag',
+          actionType: 'RED_FLAG_CREATED',
+          entityType: 'RedFlag',
           createdAt: new Date('2024-01-15'),
         },
       ];
@@ -382,8 +382,8 @@ describe('SystemAdminService', () => {
       expect(prisma.auditLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           userId: adminUserId,
-          action: 'CLEAR_CACHE',
-          entity: 'System',
+          actionType: 'CLEAR_CACHE',
+          entityType: 'System',
           entityId: 'cache',
         }),
       });

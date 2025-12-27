@@ -280,8 +280,8 @@ describe('AuthService', () => {
       };
 
       const mockPermissions = [
-        { permission: { name: 'read_plants', resource: 'plants', action: 'read' } },
-        { permission: { name: 'write_plants', resource: 'plants', action: 'write' } },
+        { permission: { name: 'read_plants', resource: 'plants', actionType: 'read' } },
+        { permission: { name: 'write_plants', resource: 'plants', actionType: 'write' } },
       ];
 
       const mockLocations = [

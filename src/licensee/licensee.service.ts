@@ -102,7 +102,7 @@ export class LicenseeService {
         userId: 'system', // Should be from authenticated user context
         entityType: 'Location',
         entityId: locationId,
-        action: 'UPDATE',
+        actionType: 'UPDATE',
         oldValue: location.licenseType,
         newValue: licenseType.name,
         ipAddress: 'unknown',

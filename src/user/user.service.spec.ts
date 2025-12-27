@@ -195,8 +195,8 @@ describe('UserService', () => {
       };
 
       const mockPermissions = [
-        { permission: { name: 'read_plants', resource: 'plants', action: 'read' } },
-        { permission: { name: 'write_inventory', resource: 'inventory', action: 'write' } },
+        { permission: { name: 'read_plants', resource: 'plants', actionType: 'read' } },
+        { permission: { name: 'write_inventory', resource: 'inventory', actionType: 'write' } },
       ];
 
       prisma.user.findUnique.mockResolvedValue(mockUser as any);

@@ -99,7 +99,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       expect(prisma.auditLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            action: 'ROOM_MOVE',
+            actionType: 'ROOM_MOVE',
           }),
         }),
       );
@@ -135,7 +135,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       const mockItem = {
         id: 'item-123',
         locationId: 'loc-123',
-        quantityGrams: 1000,
+        quantity: 1000,
         deletedAt: null,
       };
       const mockAdjustment = {
@@ -147,7 +147,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       prisma.inventoryItem.findFirst.mockResolvedValue(mockItem);
       prisma.inventoryItem.update.mockResolvedValue({
         ...mockItem,
-        quantityGrams: 1100,
+        quantity: 1100,
       });
       prisma.inventoryAdjustment.create.mockResolvedValue(mockAdjustment);
       prisma.auditLog.create.mockResolvedValue({});
@@ -166,14 +166,14 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       const mockItem = {
         id: 'item-123',
         locationId: 'loc-123',
-        quantityGrams: 1000,
+        quantity: 1000,
         deletedAt: null,
       };
 
       prisma.inventoryItem.findFirst.mockResolvedValue(mockItem);
       prisma.inventoryItem.update.mockResolvedValue({
         ...mockItem,
-        quantityGrams: 1150,
+        quantity: 1150,
       });
       prisma.inventoryAdjustment.create.mockResolvedValue({});
       prisma.auditLog.create.mockResolvedValue({});
@@ -198,7 +198,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       const mockItem = {
         id: 'item-123',
         locationId: 'loc-123',
-        quantityGrams: 100,
+        quantity: 100,
         deletedAt: null,
       };
 
@@ -219,23 +219,23 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       const mockItem = {
         id: 'item-123',
         locationId: 'loc-123',
-        quantityGrams: 1000,
-        usableWeightGrams: 900,
+        quantity: 1000,
+        usableWeight: 900,
         lotIdentifier: 'LOT-001',
         deletedAt: null,
       };
 
       prisma.inventoryItem.findFirst.mockResolvedValue(mockItem);
-      prisma.inventoryItem.update.mockResolvedValue({ ...mockItem, quantityGrams: 0 });
+      prisma.inventoryItem.update.mockResolvedValue({ ...mockItem, quantity: 0 });
       prisma.inventoryItem.create.mockResolvedValue({
         id: 'new-item-1',
-        quantityGrams: 500,
+        quantity: 500,
       });
       prisma.inventorySplit.create.mockResolvedValue({});
       prisma.auditLog.create.mockResolvedValue({});
 
       const result = await service.splitInventory('loc-123', 'item-123', {
-        splits: [{ quantityGrams: 500 }, { quantityGrams: 500 }],
+        splits: [{ quantity: 500 }, { quantity: 500 }],
         reason: 'Split for distribution',
       });
 
@@ -248,7 +248,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       const mockItem = {
         id: 'item-123',
         locationId: 'loc-123',
-        quantityGrams: 1000,
+        quantity: 1000,
         deletedAt: null,
       };
 
@@ -256,7 +256,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
 
       await expect(
         service.splitInventory('loc-123', 'item-123', {
-          splits: [{ quantityGrams: 600 }, { quantityGrams: 600 }],
+          splits: [{ quantity: 600 }, { quantity: 600 }],
           reason: 'Invalid split',
         }),
       ).rejects.toThrow(BadRequestException);
@@ -266,8 +266,8 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       const mockItem = {
         id: 'item-123',
         locationId: 'loc-123',
-        quantityGrams: 1000,
-        usableWeightGrams: null,
+        quantity: 1000,
+        usableWeight: null,
         lotIdentifier: 'LOT-001',
         deletedAt: null,
       };
@@ -279,7 +279,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       prisma.auditLog.create.mockResolvedValue({});
 
       await service.splitInventory('loc-123', 'item-123', {
-        splits: [{ quantityGrams: 500 }, { quantityGrams: 500 }],
+        splits: [{ quantity: 500 }, { quantity: 500 }],
         reason: 'Test',
       });
 
@@ -296,13 +296,13 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
   describe('combineInventory', () => {
     it('should combine multiple items into existing item', async () => {
       const mockSourceItems = [
-        { id: 'item-1', locationId: 'loc-123', quantityGrams: 500, inventoryTypeId: 'type-1', deletedAt: null },
-        { id: 'item-2', locationId: 'loc-123', quantityGrams: 300, inventoryTypeId: 'type-1', deletedAt: null },
+        { id: 'item-1', locationId: 'loc-123', quantity: 500, inventoryTypeId: 'type-1', deletedAt: null },
+        { id: 'item-2', locationId: 'loc-123', quantity: 300, inventoryTypeId: 'type-1', deletedAt: null },
       ];
       const mockTargetItem = {
         id: 'target-item',
         locationId: 'loc-123',
-        quantityGrams: 1000,
+        quantity: 1000,
         inventoryTypeId: 'type-1',
         deletedAt: null,
       };
@@ -311,7 +311,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       prisma.inventoryItem.findFirst.mockResolvedValue(mockTargetItem);
       prisma.inventoryItem.update.mockResolvedValue({
         ...mockTargetItem,
-        quantityGrams: 1800,
+        quantity: 1800,
       });
       prisma.inventoryItem.updateMany.mockResolvedValue({ count: 2 });
       prisma.inventoryCombination.create.mockResolvedValue({});
@@ -323,7 +323,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
         reason: 'Combine for processing',
       });
 
-      expect(result.combinedItem.quantityGrams).toBe(1800);
+      expect(result.combinedItem.quantity).toBe(1800);
       expect(prisma.inventoryItem.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -335,14 +335,14 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
 
     it('should create new item when combining without target', async () => {
       const mockSourceItems = [
-        { id: 'item-1', locationId: 'loc-123', quantityGrams: 500, inventoryTypeId: 'type-1', roomId: 'room-1', deletedAt: null },
-        { id: 'item-2', locationId: 'loc-123', quantityGrams: 300, inventoryTypeId: 'type-1', roomId: 'room-1', deletedAt: null },
+        { id: 'item-1', locationId: 'loc-123', quantity: 500, inventoryTypeId: 'type-1', roomId: 'room-1', deletedAt: null },
+        { id: 'item-2', locationId: 'loc-123', quantity: 300, inventoryTypeId: 'type-1', roomId: 'room-1', deletedAt: null },
       ];
 
       prisma.inventoryItem.findMany.mockResolvedValue(mockSourceItems);
       prisma.inventoryItem.create.mockResolvedValue({
         id: 'new-combined',
-        quantityGrams: 800,
+        quantity: 800,
       });
       prisma.inventoryItem.updateMany.mockResolvedValue({ count: 2 });
       prisma.inventoryCombination.create.mockResolvedValue({});
@@ -377,8 +377,8 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
   describe('createLot', () => {
     it('should create lot from wet/dry inventory items', async () => {
       const mockSourceItems = [
-        { id: 'item-1', locationId: 'loc-123', quantityGrams: 1000, deletedAt: null },
-        { id: 'item-2', locationId: 'loc-123', quantityGrams: 1500, deletedAt: null },
+        { id: 'item-1', locationId: 'loc-123', quantity: 1000, deletedAt: null },
+        { id: 'item-2', locationId: 'loc-123', quantity: 1500, deletedAt: null },
       ];
       const mockLot = {
         id: 'lot-123',
@@ -419,7 +419,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       const mockItem = {
         id: 'item-123',
         locationId: 'loc-123',
-        quantityGrams: 1000,
+        quantity: 1000,
         roomId: 'room-123',
         inventoryTypeId: 'type-1',
         deletedAt: null,
@@ -427,20 +427,20 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       const mockWasteItem = {
         id: 'waste-123',
         inventoryTypeId: 'waste',
-        quantityGrams: 1000,
+        quantity: 1000,
       };
 
       prisma.inventoryItem.findFirst.mockResolvedValue(mockItem);
       prisma.inventoryItem.update.mockResolvedValue({
         ...mockItem,
-        quantityGrams: 0,
+        quantity: 0,
         status: 'destroyed',
       });
       prisma.inventoryItem.create.mockResolvedValue(mockWasteItem);
       prisma.auditLog.create.mockResolvedValue({});
 
       const result = await service.destroyInventory('loc-123', 'item-123', {
-        quantityGrams: 1000,
+        quantity: 1000,
         method: 'incineration',
         reason: 'Contaminated',
       });
@@ -459,7 +459,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       const mockItem = {
         id: 'item-123',
         locationId: 'loc-123',
-        quantityGrams: 1000,
+        quantity: 1000,
         roomId: 'room-123',
         inventoryTypeId: 'type-1',
         deletedAt: null,
@@ -468,13 +468,13 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       prisma.inventoryItem.findFirst.mockResolvedValue(mockItem);
       prisma.inventoryItem.update.mockResolvedValue({
         ...mockItem,
-        quantityGrams: 400,
+        quantity: 400,
       });
       prisma.inventoryItem.create.mockResolvedValue({ id: 'waste-123' });
       prisma.auditLog.create.mockResolvedValue({});
 
       const result = await service.destroyInventory('loc-123', 'item-123', {
-        quantityGrams: 600,
+        quantity: 600,
         method: 'compost',
         reason: 'Partial destruction',
       });
@@ -487,7 +487,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       const mockItem = {
         id: 'item-123',
         locationId: 'loc-123',
-        quantityGrams: 1000,
+        quantity: 1000,
         deletedAt: null,
       };
 
@@ -495,7 +495,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
 
       await expect(
         service.destroyInventory('loc-123', 'item-123', {
-          quantityGrams: 1500,
+          quantity: 1500,
           method: 'incineration',
           reason: 'Test',
         }),
@@ -509,7 +509,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
         id: 'audit-123',
         entityType: 'InventoryItem',
         entityId: 'item-123',
-        action: 'ROOM_MOVE',
+        actionType: 'ROOM_MOVE',
         oldValue: JSON.stringify({ roomId: 'old-room' }),
         newValue: JSON.stringify({ roomId: 'new-room' }),
       };
@@ -544,14 +544,14 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
         id: 'audit-123',
         entityType: 'InventoryItem',
         entityId: 'item-123',
-        action: 'ADJUST',
-        oldValue: JSON.stringify({ quantityGrams: 1000 }),
-        newValue: JSON.stringify({ quantityGrams: 1100 }),
+        actionType: 'ADJUST',
+        oldValue: JSON.stringify({ quantity: 1000 }),
+        newValue: JSON.stringify({ quantity: 1100 }),
       };
       const mockItem = {
         id: 'item-123',
         locationId: 'loc-123',
-        quantityGrams: 1100,
+        quantity: 1100,
         deletedAt: null,
       };
 
@@ -559,7 +559,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       prisma.inventoryItem.findFirst.mockResolvedValue(mockItem);
       prisma.inventoryItem.update.mockResolvedValue({
         ...mockItem,
-        quantityGrams: 1000,
+        quantity: 1000,
       });
       prisma.auditLog.create.mockResolvedValue({});
 
@@ -569,7 +569,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
 
       expect(prisma.inventoryItem.update).toHaveBeenCalledWith({
         where: { id: 'item-123' },
-        data: { quantityGrams: 1000 },
+        data: { quantity: 1000 },
       });
     });
 

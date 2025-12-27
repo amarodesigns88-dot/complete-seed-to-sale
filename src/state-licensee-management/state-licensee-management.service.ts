@@ -56,7 +56,7 @@ export class StateLicenseeManagementService {
     await this.prisma.auditLog.create({
       data: {
         userId: stateUserId,
-        action: 'CREATE_LICENSEE_ACCOUNT',
+        actionType: 'CREATE_LICENSEE_ACCOUNT',
         entityType: 'Location',
         entityId: location.id,
         details: {
@@ -166,7 +166,7 @@ export class StateLicenseeManagementService {
     await this.prisma.auditLog.create({
       data: {
         userId: stateUserId,
-        action: 'SET_INVENTORY_WINDOW',
+        actionType: 'SET_INVENTORY_WINDOW',
         entityType: 'Location',
         entityId: locationId,
         details: {
@@ -227,7 +227,7 @@ export class StateLicenseeManagementService {
     await this.prisma.auditLog.create({
       data: {
         userId: stateUserId,
-        action: 'ASSIGN_LICENSE_TYPE',
+        actionType: 'ASSIGN_LICENSE_TYPE',
         entityType: 'Location',
         entityId: locationId,
         details: {

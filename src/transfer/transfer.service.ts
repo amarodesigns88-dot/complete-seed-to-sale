@@ -29,7 +29,7 @@ export class TransferService {
 
     // Validate destination location exists
     const destinationLocation = await this.prisma.location.findUnique({
-      where: { id: dto.destinationLocationId },
+      where: { id: dto.receiverLocationId },
     });
 
     if (!destinationLocation) {
@@ -86,8 +86,8 @@ export class TransferService {
     const transfer = await this.prisma.transfer.create({
       data: {
         manifestNumber,
-        sourceLocationId: locationId,
-        destinationLocationId: dto.destinationLocationId,
+        senderLocationId: locationId,
+        receiverLocationId: dto.receiverLocationId,
         driverId: dto.driverId,
         vehicleId: dto.vehicleId,
         status: TransferStatus.PENDING,
@@ -128,13 +128,13 @@ export class TransferService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
-        entity: 'Transfer',
+        entityType: 'Transfer',
         entityId: transfer.id,
-        action: 'CREATE',
+        actionType: 'CREATE',
         userId: 'system', // Should be from auth context
         changes: JSON.stringify({
           manifestNumber: transfer.manifestNumber,
-          destinationLocationId: dto.destinationLocationId,
+          receiverLocationId: dto.receiverLocationId,
           itemCount: dto.items.length,
         }),
       },
@@ -144,18 +144,18 @@ export class TransferService {
   }
 
   async getTransfers(locationId: string, filters: TransferFilterDto) {
-    const { status, destinationLocationId, page = 1, limit = 20 } = filters;
+    const { status, receiverLocationId, page = 1, limit = 20 } = filters;
 
     const where: any = {
-      OR: [{ sourceLocationId: locationId }, { destinationLocationId: locationId }],
+      OR: [{ senderLocationId: locationId }, { receiverLocationId: locationId }],
     };
 
     if (status) {
       where.status = status;
     }
 
-    if (destinationLocationId) {
-      where.destinationLocationId = destinationLocationId;
+    if (receiverLocationId) {
+      where.receiverLocationId = receiverLocationId;
     }
 
     const [transfers, total] = await Promise.all([
@@ -193,7 +193,7 @@ export class TransferService {
   async getPendingTransfers(locationId: string) {
     const transfers = await this.prisma.transfer.findMany({
       where: {
-        destinationLocationId: locationId,
+        receiverLocationId: locationId,
         status: TransferStatus.PENDING,
       },
       include: {
@@ -217,7 +217,7 @@ export class TransferService {
 
     const transfers = await this.prisma.transfer.findMany({
       where: {
-        destinationLocationId: locationId,
+        receiverLocationId: locationId,
         status: {
           in: [TransferStatus.PENDING, TransferStatus.IN_TRANSIT],
         },
@@ -263,8 +263,8 @@ export class TransferService {
 
     // Verify location has access to this transfer
     if (
-      transfer.sourceLocationId !== locationId &&
-      transfer.destinationLocationId !== locationId
+      transfer.senderLocationId !== locationId &&
+      transfer.receiverLocationId !== locationId
     ) {
       throw new NotFoundException('Transfer not found');
     }
@@ -292,7 +292,7 @@ export class TransferService {
       throw new NotFoundException('Transfer not found');
     }
 
-    if (transfer.destinationLocationId !== locationId) {
+    if (transfer.receiverLocationId !== locationId) {
       throw new BadRequestException(
         'Transfer can only be received by destination location',
       );
@@ -356,7 +356,7 @@ export class TransferService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
-        entity: 'Transfer',
+        entityType: 'Transfer',
         entityId: transferId,
         action: dto.status === 'RECEIVED' ? 'RECEIVE' : 'REJECT',
         userId: 'system', // Should be from auth context
@@ -404,9 +404,9 @@ export class TransferService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
-        entity: 'Driver',
+        entityType: 'Driver',
         entityId: driver.id,
-        action: 'CREATE',
+        actionType: 'CREATE',
         userId: 'system', // Should be from auth context
         changes: JSON.stringify({
           name: driver.name,
@@ -463,9 +463,9 @@ export class TransferService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
-        entity: 'Vehicle',
+        entityType: 'Vehicle',
         entityId: vehicle.id,
-        action: 'CREATE',
+        actionType: 'CREATE',
         userId: 'system', // Should be from auth context
         changes: JSON.stringify({
           make: vehicle.make,

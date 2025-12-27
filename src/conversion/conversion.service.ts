@@ -14,7 +14,7 @@ export class ConversionService {
 
   async convertWetToDry(locationId: string, dto: WetToDryConversionDto, userId: string) {
     // Validate source inventory exists and has sufficient quantity
-    const sourceInventory = await this.prisma.inventory.findUnique({
+    const sourceInventory = await this.prisma.inventoryItem.findUnique({
       where: { id: dto.sourceInventoryId },
       include: { inventoryType: true },
     });
@@ -68,7 +68,7 @@ export class ConversionService {
           strainId: dto.strainId,
           roomId: dto.roomId,
           weightGrams: dto.outputWeightGrams,
-          usableWeightGrams: dto.outputWeightGrams, // For dry, usable = total
+          usableWeight: dto.outputWeightGrams, // For dry, usable = total
           batchNumber: dto.batchNumber,
           barcode: this.generateBarcode(),
         },
@@ -87,8 +87,8 @@ export class ConversionService {
         data: {
           userId,
           locationId,
-          action: 'CONVERSION',
-          entity: 'Inventory',
+          actionType: 'CONVERSION',
+          entityType: 'Inventory',
           entityId: conversion.id,
           details: JSON.stringify({
             conversionType: ConversionType.WET_TO_DRY,
@@ -114,7 +114,7 @@ export class ConversionService {
 
   async convertDryToExtraction(locationId: string, dto: DryToExtractionConversionDto, userId: string) {
     // Validate source inventory exists and has sufficient quantity
-    const sourceInventory = await this.prisma.inventory.findUnique({
+    const sourceInventory = await this.prisma.inventoryItem.findUnique({
       where: { id: dto.sourceInventoryId },
       include: { inventoryType: true },
     });
@@ -168,7 +168,7 @@ export class ConversionService {
           strainId: dto.strainId,
           roomId: dto.roomId,
           weightGrams: dto.outputWeightGrams,
-          usableWeightGrams: dto.outputWeightGrams, // For extraction, usable = total
+          usableWeight: dto.outputWeightGrams, // For extraction, usable = total
           batchNumber: dto.batchNumber,
           barcode: this.generateBarcode(),
         },
@@ -187,8 +187,8 @@ export class ConversionService {
         data: {
           userId,
           locationId,
-          action: 'CONVERSION',
-          entity: 'Inventory',
+          actionType: 'CONVERSION',
+          entityType: 'Inventory',
           entityId: conversion.id,
           details: JSON.stringify({
             conversionType: ConversionType.DRY_TO_EXTRACTION,
@@ -215,7 +215,7 @@ export class ConversionService {
 
   async convertExtractionToFinished(locationId: string, dto: ExtractionToFinishedConversionDto, userId: string) {
     // Validate source inventory exists and has sufficient quantity
-    const sourceInventory = await this.prisma.inventory.findUnique({
+    const sourceInventory = await this.prisma.inventoryItem.findUnique({
       where: { id: dto.sourceInventoryId },
       include: { inventoryType: true },
     });
@@ -247,7 +247,7 @@ export class ConversionService {
     }
 
     // Validate usable weight is not greater than output weight
-    if (dto.usableWeightGrams > dto.outputWeightGrams) {
+    if (dto.usableWeight > dto.outputWeightGrams) {
       throw new BadRequestException('Usable weight cannot exceed output weight');
     }
 
@@ -274,7 +274,7 @@ export class ConversionService {
           strainId: dto.strainId,
           roomId: dto.roomId,
           weightGrams: dto.outputWeightGrams,
-          usableWeightGrams: dto.usableWeightGrams, // Track usable weight for finished goods
+          usableWeight: dto.usableWeight, // Track usable weight for finished goods
           quantity: dto.unitsProduced,
           batchNumber: dto.batchNumber,
           barcode: this.generateBarcode(),
@@ -294,15 +294,15 @@ export class ConversionService {
         data: {
           userId,
           locationId,
-          action: 'CONVERSION',
-          entity: 'Inventory',
+          actionType: 'CONVERSION',
+          entityType: 'Inventory',
           entityId: conversion.id,
           details: JSON.stringify({
             conversionType: ConversionType.EXTRACTION_TO_FINISHED,
             sourceInventoryId: dto.sourceInventoryId,
             inputWeightGrams: dto.inputWeightGrams,
             outputWeightGrams: dto.outputWeightGrams,
-            usableWeightGrams: dto.usableWeightGrams,
+            usableWeight: dto.usableWeight,
             unitsProduced: dto.unitsProduced,
             materialLossGrams,
             lossPercentage: lossPercentage.toFixed(2),
@@ -323,7 +323,7 @@ export class ConversionService {
   }
 
   async getConversion(locationId: string, conversionId: string) {
-    const conversion = await this.prisma.inventory.findUnique({
+    const conversion = await this.prisma.inventoryItem.findUnique({
       where: { id: conversionId },
       include: {
         inventoryType: true,
@@ -340,7 +340,7 @@ export class ConversionService {
     const auditLog = await this.prisma.auditLog.findFirst({
       where: {
         entityId: conversionId,
-        action: 'CONVERSION',
+        actionType: 'CONVERSION',
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -372,7 +372,7 @@ export class ConversionService {
     const auditLogs = await this.prisma.auditLog.findMany({
       where: {
         locationId,
-        action: 'CONVERSION',
+        actionType: 'CONVERSION',
         ...(startDate || endDate
           ? {
               createdAt: {
@@ -398,7 +398,7 @@ export class ConversionService {
 
     // Get inventory items for these conversions
     const conversionIds = filteredLogs.map((log) => log.entityId);
-    const conversions = await this.prisma.inventory.findMany({
+    const conversions = await this.prisma.inventoryItem.findMany({
       where: {
         id: { in: conversionIds },
         ...where,
@@ -422,7 +422,7 @@ export class ConversionService {
     const total = await this.prisma.auditLog.count({
       where: {
         locationId,
-        action: 'CONVERSION',
+        actionType: 'CONVERSION',
       },
     });
 

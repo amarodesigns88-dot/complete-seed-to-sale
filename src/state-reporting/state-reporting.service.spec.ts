@@ -63,7 +63,7 @@ describe('StateReportingService', () => {
       jest.spyOn(prisma.auditLog, 'findMany').mockResolvedValue([
         {
           id: '1',
-          action: 'RED_FLAG_CREATED',
+          actionType: 'RED_FLAG_CREATED',
           createdAt: new Date('2024-01-15'),
           user: { email: 'user@test.com', firstName: 'John', lastName: 'Doe' },
         } as any,
@@ -80,7 +80,7 @@ describe('StateReportingService', () => {
       expect(prisma.auditLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            action: 'GENERATE_COMPLIANCE_REPORT',
+            actionType: 'GENERATE_COMPLIANCE_REPORT',
           }),
         }),
       );
@@ -270,7 +270,7 @@ describe('StateReportingService', () => {
 
       await service.generateInventoryReport(dto);
 
-      expect(prisma.inventory.findMany).toHaveBeenCalledWith(
+      expect(prisma.inventoryItem.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             type: 'FLOWER',

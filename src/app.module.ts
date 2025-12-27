@@ -25,7 +25,7 @@ import { SystemAdminModule } from './system-admin/system-admin.module';
     UserModule,
     CultivationModule,
     SalesModule,
-    // InventoryModule, // TODO: Fix quantityGrams->quantity, usableWeightGrams->usableWeight, room relation, AuditLog fields, strainId
+    // InventoryModule, // TODO: Fix quantity->quantity, usableWeight->usableWeight, room relation, AuditLog fields, strainId
     // ConversionModule, // TODO: Fix prisma.inventory -> prisma.inventoryItem and field mismatches
     // TransferModule, // TODO: Fix AuditLog entity->entityType
     // TestingModule, // TODO: Fix prisma.inventory -> prisma.inventoryItem

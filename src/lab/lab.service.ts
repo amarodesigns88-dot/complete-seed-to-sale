@@ -53,7 +53,7 @@ export class LabService {
     await this.prisma.auditLog.create({
       data: {
         userId,
-        action: 'TEST_RESULT_ENTERED',
+        actionType: 'TEST_RESULT_ENTERED',
         entityType: 'TestResult',
         entityId: testResult.id,
         newValue: JSON.stringify(testResult),
@@ -119,7 +119,7 @@ export class LabService {
     await this.prisma.auditLog.create({
       data: {
         userId,
-        action: 'COA_GENERATED',
+        actionType: 'COA_GENERATED',
         entityType: 'Sample',
         entityId: sample.id,
         newValue: JSON.stringify(coa),

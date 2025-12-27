@@ -41,7 +41,7 @@ export class StateDashboardService {
     });
 
     // Get total inventory
-    const inventoryAgg = await this.prisma.inventory.aggregate({
+    const inventoryAgg = await this.prisma.inventoryItem.aggregate({
       _sum: {
         quantity: true,
       },
@@ -82,7 +82,7 @@ export class StateDashboardService {
     // Get red flags count
     const activeRedFlags = await this.prisma.auditLog.count({
       where: {
-        action: 'RED_FLAG',
+        actionType: 'RED_FLAG',
         details: {
           path: ['resolved'],
           equals: false,
@@ -113,7 +113,7 @@ export class StateDashboardService {
 
     const redFlagLogs = await this.prisma.auditLog.findMany({
       where: {
-        action: 'RED_FLAG',
+        actionType: 'RED_FLAG',
         ...dateFilter,
       },
       orderBy: {
@@ -202,7 +202,7 @@ export class StateDashboardService {
   }
 
   async getInventorySummary(filters: DashboardFilterDto): Promise<InventorySummaryDto[]> {
-    const inventoryByType = await this.prisma.inventory.groupBy({
+    const inventoryByType = await this.prisma.inventoryItem.groupBy({
       by: ['type'],
       _sum: {
         quantity: true,

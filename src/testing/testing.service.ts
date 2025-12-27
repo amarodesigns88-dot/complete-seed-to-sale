@@ -8,7 +8,7 @@ export class TestingService {
 
   async generateSample(locationId: string, dto: GenerateSampleDto, userId: string) {
     // Verify inventory item exists
-    const inventoryItem = await this.prisma.inventory.findFirst({
+    const inventoryItem = await this.prisma.inventoryItem.findFirst({
       where: {
         id: dto.inventoryItemId,
         locationId,
@@ -21,7 +21,7 @@ export class TestingService {
     }
 
     // Verify sufficient quantity
-    if (inventoryItem.quantityGrams < dto.sampleSizeGrams) {
+    if (inventoryItem.quantity < dto.sampleSizeGrams) {
       throw new BadRequestException('Insufficient inventory quantity for sample');
     }
 
@@ -37,10 +37,10 @@ export class TestingService {
     });
 
     // Reduce inventory quantity
-    await this.prisma.inventory.update({
+    await this.prisma.inventoryItem.update({
       where: { id: dto.inventoryItemId },
       data: {
-        quantityGrams: {
+        quantity: {
           decrement: dto.sampleSizeGrams,
         },
       },
@@ -50,7 +50,7 @@ export class TestingService {
     await this.prisma.auditLog.create({
       data: {
         userId,
-        action: 'SAMPLE_GENERATED',
+        actionType: 'SAMPLE_GENERATED',
         entityType: 'Sample',
         entityId: sample.id,
         newValue: JSON.stringify(sample),
@@ -100,7 +100,7 @@ export class TestingService {
     await this.prisma.auditLog.create({
       data: {
         userId,
-        action: 'LAB_ASSIGNED',
+        actionType: 'LAB_ASSIGNED',
         entityType: 'Sample',
         entityId: sample.id,
         oldValue: JSON.stringify(sample),
@@ -146,7 +146,7 @@ export class TestingService {
     await this.prisma.auditLog.create({
       data: {
         userId,
-        action: 'SAMPLE_REMEDIATION',
+        actionType: 'SAMPLE_REMEDIATION',
         entityType: 'Sample',
         entityId: sample.id,
         oldValue: JSON.stringify(sample),

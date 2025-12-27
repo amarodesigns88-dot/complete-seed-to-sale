@@ -54,7 +54,7 @@ describe('TestingService', () => {
 
       const mockInventory = {
         id: 'inv-123',
-        quantityGrams: 100.0,
+        quantity: 100.0,
       };
 
       const mockSample = {
@@ -70,7 +70,7 @@ describe('TestingService', () => {
       mockPrismaService.sample.create.mockResolvedValue(mockSample);
       mockPrismaService.inventory.update.mockResolvedValue({
         ...mockInventory,
-        quantityGrams: 95.0,
+        quantity: 95.0,
       });
       mockPrismaService.auditLog.create.mockResolvedValue({});
 
@@ -82,7 +82,7 @@ describe('TestingService', () => {
       });
       expect(mockPrismaService.inventory.update).toHaveBeenCalledWith({
         where: { id: 'inv-123' },
-        data: { quantityGrams: 95.0 },
+        data: { quantity: 95.0 },
       });
       expect(mockPrismaService.sample.create).toHaveBeenCalled();
       expect(mockPrismaService.auditLog.create).toHaveBeenCalled();
@@ -111,7 +111,7 @@ describe('TestingService', () => {
 
       const mockInventory = {
         id: 'inv-123',
-        quantityGrams: 100.0,
+        quantity: 100.0,
       };
 
       mockPrismaService.inventory.findUnique.mockResolvedValue(mockInventory);

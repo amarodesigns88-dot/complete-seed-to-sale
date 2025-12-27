@@ -148,7 +148,7 @@ describe('StateLicenseeManagementService', () => {
       });
       expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          action: 'ACTIVATE_LICENSE',
+          actionType: 'ACTIVATE_LICENSE',
           details: expect.stringContaining(dto.reason),
         }),
       });
@@ -307,7 +307,7 @@ describe('StateLicenseeManagementService', () => {
       });
       expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          action: 'ASSIGN_LICENSE_TYPE',
+          actionType: 'ASSIGN_LICENSE_TYPE',
           details: expect.stringContaining(`from 1 to 2`),
         }),
       });

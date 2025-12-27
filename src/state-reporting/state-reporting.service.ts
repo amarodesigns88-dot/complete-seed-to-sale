@@ -93,7 +93,7 @@ export class StateReportingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
-        action: 'GENERATE_COMPLIANCE_REPORT',
+        actionType: 'GENERATE_COMPLIANCE_REPORT',
         entityType: 'REPORT',
         entityId: '',
         performedBy: 'SYSTEM',
@@ -146,7 +146,7 @@ export class StateReportingService {
     });
 
     // Get inventory metrics
-    const totalInventory = await this.prisma.inventory.aggregate({
+    const totalInventory = await this.prisma.inventoryItem.aggregate({
       where,
       _sum: {
         quantity: true,
@@ -184,7 +184,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
-        action: 'GENERATE_MARKET_ANALYTICS_REPORT',
+        actionType: 'GENERATE_MARKET_ANALYTICS_REPORT',
         entityType: 'REPORT',
         entityId: '',
         performedBy: 'SYSTEM',
@@ -232,7 +232,7 @@ export class StateReportingService {
         })
       : null;
 
-    const inventoryMetrics = await this.prisma.inventory.aggregate({
+    const inventoryMetrics = await this.prisma.inventoryItem.aggregate({
       where,
       _count: { id: true },
       _sum: { quantity: true },
@@ -264,7 +264,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
-        action: 'GENERATE_LICENSEE_PERFORMANCE_REPORT',
+        actionType: 'GENERATE_LICENSEE_PERFORMANCE_REPORT',
         entityType: 'REPORT',
         entityId: dto.licenseeUbi || '',
         performedBy: 'SYSTEM',
@@ -308,7 +308,7 @@ export class StateReportingService {
       };
     }
 
-    const inventory = await this.prisma.inventory.findMany({
+    const inventory = await this.prisma.inventoryItem.findMany({
       where,
       include: {
         location: {
@@ -330,7 +330,7 @@ export class StateReportingService {
       },
     });
 
-    const summary = await this.prisma.inventory.aggregate({
+    const summary = await this.prisma.inventoryItem.aggregate({
       where,
       _sum: { quantity: true },
       _count: { id: true },
@@ -351,7 +351,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
-        action: 'GENERATE_INVENTORY_REPORT',
+        actionType: 'GENERATE_INVENTORY_REPORT',
         entityType: 'REPORT',
         entityId: '',
         performedBy: 'SYSTEM',
@@ -437,7 +437,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
-        action: 'GENERATE_SALES_ANALYTICS_REPORT',
+        actionType: 'GENERATE_SALES_ANALYTICS_REPORT',
         entityType: 'REPORT',
         entityId: '',
         performedBy: 'SYSTEM',
@@ -530,7 +530,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
-        action: 'GENERATE_TRANSFER_REPORT',
+        actionType: 'GENERATE_TRANSFER_REPORT',
         entityType: 'REPORT',
         entityId: '',
         performedBy: 'SYSTEM',
@@ -630,7 +630,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
-        action: 'GENERATE_TESTING_COMPLIANCE_REPORT',
+        actionType: 'GENERATE_TESTING_COMPLIANCE_REPORT',
         entityType: 'REPORT',
         entityId: '',
         performedBy: 'SYSTEM',
@@ -682,7 +682,7 @@ export class StateReportingService {
 
       switch (source.toUpperCase()) {
         case 'INVENTORY':
-          reportData.dataSources.inventory = await this.prisma.inventory.count({ where });
+          reportData.dataSources.inventory = await this.prisma.inventoryItem.count({ where });
           break;
         case 'SALES':
           reportData.dataSources.sales = await this.prisma.sale.count({ where });
@@ -700,7 +700,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
-        action: 'GENERATE_CUSTOM_REPORT',
+        actionType: 'GENERATE_CUSTOM_REPORT',
         entityType: 'REPORT',
         entityId: '',
         performedBy: 'SYSTEM',

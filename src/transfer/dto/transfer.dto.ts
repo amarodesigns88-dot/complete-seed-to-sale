@@ -35,7 +35,7 @@ export class CreateTransferDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  destinationLocationId: string;
+  receiverLocationId: string;
 
   @ApiProperty({ type: [TransferItemDto] })
   @IsArray()
@@ -136,7 +136,7 @@ export class TransferFilterDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  destinationLocationId?: string;
+  receiverLocationId?: string;
 
   @ApiPropertyOptional()
   @IsNumber()
