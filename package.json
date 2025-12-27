@@ -23,7 +23,8 @@
     "export:ts-to-txt": "node scripts/convert-ts-to-txt.js"
   },
   "prisma": {
-    "schema": "src/prisma/schema.prisma"
+    "schema": "src/prisma/schema.prisma",
+    "seed": "tsx src/prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

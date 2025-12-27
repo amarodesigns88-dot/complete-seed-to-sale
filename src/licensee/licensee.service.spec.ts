@@ -188,6 +188,7 @@ describe('LicenseeService - Sprints 3-4 Enhancements', () => {
       expect(prisma.location.update).toHaveBeenCalledWith({
         where: { id: 'loc-123' },
         data: { licenseTypeId: 'type-2' },
+        module: "Licensee",
         include: { licenseType: true },
       });
       expect(prisma.auditLog.create).toHaveBeenCalledWith(

@@ -33,7 +33,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.licenseeUbi) {
@@ -58,8 +58,6 @@ export class StateReportingService {
         user: {
           select: {
             email: true,
-            firstName: true,
-            lastName: true,
           },
         },
       },
@@ -93,10 +91,10 @@ export class StateReportingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_COMPLIANCE_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'COMPLIANCE', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -128,7 +126,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.licenseType) {
@@ -140,7 +138,7 @@ export class StateReportingService {
     // Get licensee count
     const totalLicensees = await this.prisma.location.count({
       where: {
-        isDeleted: false,
+        
         ...(dto.licenseType && { licenseType: dto.licenseType }),
       },
     });
@@ -184,10 +182,10 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_MARKET_ANALYTICS_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'MARKET_ANALYTICS', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -215,7 +213,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.licenseeUbi) {
@@ -264,10 +262,10 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_LICENSEE_PERFORMANCE_REPORT',
         entityType: 'REPORT',
         entityId: dto.licenseeUbi || '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'LICENSEE_PERFORMANCE', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -295,7 +293,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.inventoryType) {
@@ -311,13 +309,6 @@ export class StateReportingService {
     const inventory = await this.prisma.inventoryItem.findMany({
       where,
       include: {
-        location: {
-          select: {
-            ubi: true,
-            businessName: true,
-            licenseType: true,
-          },
-        },
         room: {
           select: {
             name: true,
@@ -351,10 +342,10 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_INVENTORY_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'INVENTORY', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -385,7 +376,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.licenseType) {
@@ -397,18 +388,12 @@ export class StateReportingService {
     const sales = await this.prisma.sale.findMany({
       where,
       include: {
-        location: {
-          select: {
-            ubi: true,
-            businessName: true,
-          },
-        },
         saleItems: {
           include: {
-            inventory: {
+            inventoryItem: {
               select: {
-                strain: true,
-                type: true,
+                strainId: true,
+                inventoryType: true,
               },
             },
           },
@@ -437,10 +422,10 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_SALES_ANALYTICS_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'SALES_ANALYTICS', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -473,7 +458,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.status) {
@@ -491,16 +476,14 @@ export class StateReportingService {
     const transfers = await this.prisma.transfer.findMany({
       where,
       include: {
-        fromLocation: {
+        senderLocation: {
           select: {
             ubi: true,
-            businessName: true,
           },
         },
-        toLocation: {
+        receiverLocation: {
           select: {
             ubi: true,
-            businessName: true,
           },
         },
         transferItems: true,
@@ -530,10 +513,10 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_TRANSFER_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'TRANSFER', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -563,7 +546,7 @@ export class StateReportingService {
         gte: startDate,
         lte: endDate,
       },
-      isDeleted: false,
+      
     };
 
     if (dto.testType) {
@@ -583,10 +566,10 @@ export class StateReportingService {
       include: {
         sample: {
           include: {
-            inventory: {
+            inventoryItem: {
               select: {
-                strain: true,
-                type: true,
+                strainId: true,
+                inventoryType: true,
               },
             },
           },
@@ -603,7 +586,7 @@ export class StateReportingService {
           gte: startDate,
           lte: endDate,
         },
-        isDeleted: false,
+        
       },
       _count: { id: true },
     });
@@ -630,10 +613,10 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_TESTING_COMPLIANCE_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'TESTING_COMPLIANCE', dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -676,7 +659,7 @@ export class StateReportingService {
           gte: startDate,
           lte: endDate,
         },
-        isDeleted: false,
+        
         ...dto.filters,
       };
 
@@ -700,10 +683,10 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_CUSTOM_REPORT',
         entityType: 'REPORT',
         entityId: '',
-        performedBy: 'SYSTEM',
         metadata: { reportType: 'CUSTOM', name: dto.name, dataSources: dto.dataSources, dateRange: `${dto.startDate} to ${dto.endDate}` },
       },
     });
@@ -713,7 +696,7 @@ export class StateReportingService {
       reportType: 'CUSTOM',
       generatedAt: new Date(),
       data: reportData,
-      totalRecords: Object.values(reportData.dataSources).reduce((sum: number, val: any) => sum + (typeof val === 'number' ? val : 0), 0),
+      totalRecords: Object.values(reportData.dataSources).reduce((sum: number, val: any) => sum + (typeof val === 'number' ? val : 0), 0) as number,
       summary: reportData.dataSources,
     };
   }

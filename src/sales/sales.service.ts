@@ -570,7 +570,7 @@ export class SalesService {
       throw new BadRequestException('Inventory item does not belong to this location');
     }
 
-    let finalPrice = inventoryItem.price;
+    let finalPrice = inventoryItem.price || 0;
     let discountAmount = 0;
 
     if (dto.customPrice !== undefined) {
@@ -587,7 +587,7 @@ export class SalesService {
 
     return {
       inventoryItemId: dto.inventoryItemId,
-      originalPrice: inventoryItem.price,
+      originalPrice: inventoryItem.price || 0,
       customPrice: dto.customPrice,
       discountType: dto.discountType,
       discountValue: dto.discountValue,
@@ -616,10 +616,11 @@ export class SalesService {
     }
 
     const customizedItems = inventoryItems.map(item => {
+      const itemPrice = item.price || 0;
       let discountAmount = 0;
 
       if (dto.discountType === DiscountType.PERCENTAGE) {
-        discountAmount = (item.price * dto.discountValue) / 100;
+        discountAmount = (itemPrice * dto.discountValue) / 100;
       } else {
         discountAmount = dto.discountValue;
       }
@@ -627,11 +628,11 @@ export class SalesService {
       return {
         inventoryItemId: item.id,
         productName: item.productName,
-        originalPrice: item.price,
+        originalPrice: itemPrice,
         discountType: dto.discountType,
         discountValue: dto.discountValue,
         discountAmount,
-        finalPrice: item.price - discountAmount,
+        finalPrice: itemPrice - discountAmount,
       };
     });
 

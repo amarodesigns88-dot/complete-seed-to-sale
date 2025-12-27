@@ -482,6 +482,7 @@ describe('CultivationService (unit)', () => {
       expect(prisma.plant.update).toHaveBeenCalledWith({
         where: { id: plantId },
         data: { roomId: toRoomId },
+        module: "Cultivation",
       });
       expect(prisma.auditLog.create).toHaveBeenCalled();
       expect(result).toBeDefined();

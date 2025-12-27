@@ -31,6 +31,9 @@ export class TestingService {
         inventoryItemId: dto.inventoryItemId,
         sampleType: dto.sampleType,
         sampleSizeGrams: dto.sampleSizeGrams,
+        sampleBarcode: `SAMPLE-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        quantity: dto.sampleSizeGrams,
+        unit: 'grams',
         status: 'PENDING',
         notes: dto.notes,
       },
@@ -49,6 +52,7 @@ export class TestingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Testing",
         userId,
         actionType: 'SAMPLE_GENERATED',
         entityType: 'Sample',
@@ -99,6 +103,7 @@ export class TestingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Testing",
         userId,
         actionType: 'LAB_ASSIGNED',
         entityType: 'Sample',
@@ -145,6 +150,7 @@ export class TestingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Testing",
         userId,
         actionType: 'SAMPLE_REMEDIATION',
         entityType: 'Sample',
@@ -208,13 +214,12 @@ export class TestingService {
             select: {
               id: true,
               barcode: true,
-              strain: true,
+              strainId: true,
             },
           },
           testResults: {
             select: {
               id: true,
-              testType: true,
               result: true,
             },
           },

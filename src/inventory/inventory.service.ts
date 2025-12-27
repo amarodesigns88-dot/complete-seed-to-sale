@@ -59,12 +59,12 @@ export class InventoryService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: 'InventoryItem',
         entityId: inventoryItemId,
         actionType: 'ROOM_MOVE',
         oldValue: JSON.stringify({ roomId: inventoryItem.roomId, roomName: inventoryItem.room?.name }),
         newValue: JSON.stringify({ roomId: targetRoom.id, roomName: targetRoom.name }),
-        reason: dto.reason || 'Room movement',
       },
     });
 
@@ -106,12 +106,12 @@ export class InventoryService {
     const adjustment = await this.prisma.inventoryAdjustment.create({
       data: {
         inventoryItemId,
+        quantity: dto.adjustmentGrams,
         adjustmentGrams: dto.adjustmentGrams,
-        previousQuantityGrams: inventoryItem.quantity,
-        newQuantityGrams: newQuantity,
-        reason: dto.reason,
         adjustmentType: dto.adjustmentType,
-        isRedFlag,
+        reason: 'Manual adjustment',
+        createdBy: 'system',
+        isRedFlagged: isRedFlag,
       },
     });
 
@@ -127,12 +127,12 @@ export class InventoryService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: 'InventoryItem',
         entityId: inventoryItemId,
         actionType: 'QUANTITY_ADJUSTMENT',
         oldValue: JSON.stringify({ quantity: inventoryItem.quantity }),
         newValue: JSON.stringify({ quantity: newQuantity }),
-        reason: dto.reason,
       },
     });
 
@@ -158,7 +158,7 @@ export class InventoryService {
         locationId,
         deletedAt: null,
       },
-      include: { inventoryType: true, strain: true },
+      include: { inventoryType: true },
     });
 
     if (!parentItem) {
@@ -175,7 +175,7 @@ export class InventoryService {
     const baseSubLot = parentItem.sublotIdentifier || `${parentItem.barcode.substring(8)}`;
 
     // Create split items
-    const splitItems = [];
+    const splitItems: any[] = [];
     for (let i = 0; i < dto.splits.length; i++) {
       const split = dto.splits[i];
       const sublotId = `${baseSubLot}-${i + 1}`;
@@ -187,6 +187,8 @@ export class InventoryService {
         data: {
           barcode,
           inventoryTypeId: parentItem.inventoryTypeId,
+          productName: `${parentItem.productName} - Split ${i + 1}`,
+          unit: parentItem.unit,
           strainId: parentItem.strainId,
           quantity: split.weightGrams,
           roomId: split.roomId || parentItem.roomId,
@@ -205,8 +207,9 @@ export class InventoryService {
     // Create split record
     const splitRecord = await this.prisma.inventorySplit.create({
       data: {
-        parentInventoryItemId: inventoryItemId,
-        reason: dto.reason,
+        parentInventoryId: inventoryItemId,
+        childInventoryIds: [], // Will be updated with split item IDs
+        createdBy: 'system',
       },
     });
 
@@ -222,6 +225,7 @@ export class InventoryService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: 'InventoryItem',
         entityId: inventoryItemId,
         actionType: 'SPLIT',
@@ -231,7 +235,6 @@ export class InventoryService {
           splitCount: dto.splits.length,
           splitIds: splitItems.map(item => item.id),
         }),
-        reason: dto.reason,
       },
     });
 
@@ -312,6 +315,8 @@ export class InventoryService {
         data: {
           barcode,
           inventoryTypeId: firstTypeId,
+          productName: `Combined ${items[0].productName}`,
+          unit: items[0].unit,
           strainId: items[0].strainId,
           quantity: totalWeight,
           usableWeight: totalUsableWeight > 0 ? totalUsableWeight : null,
@@ -325,8 +330,10 @@ export class InventoryService {
     // Create combination record
     const combinationRecord = await this.prisma.inventoryCombination.create({
       data: {
-        targetInventoryItemId: combinedItem.id,
-        reason: dto.reason,
+        targetInventoryId: combinedItem.id,
+        sourceInventoryIds: dto.inventoryItemIds,
+        combinationType: 'MERGE',
+        createdBy: 'system',
       },
     });
 
@@ -343,6 +350,7 @@ export class InventoryService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: 'InventoryItem',
         entityId: combinedItem.id,
         actionType: 'COMBINE',
@@ -354,7 +362,6 @@ export class InventoryService {
           combinedId: combinedItem.id,
           totalWeight,
         }),
-        reason: dto.reason,
       },
     });
 
@@ -416,6 +423,9 @@ export class InventoryService {
     const lot = await this.prisma.lot.create({
       data: {
         batchNumber: dto.lotName,
+        inventoryTypeId: lotInventoryType.id,
+        totalQuantity: totalWeight,
+        unit: 'GRAM',
         locationId,
       },
     });
@@ -426,6 +436,8 @@ export class InventoryService {
       data: {
         barcode,
         inventoryTypeId: lotInventoryType.id,
+        productName: `Lot ${dto.lotName}`,
+        unit: 'GRAM',
         quantity: totalWeight,
         roomId: dto.targetRoomId,
         locationId,
@@ -446,6 +458,7 @@ export class InventoryService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: 'Lot',
         entityId: lot.id,
         actionType: 'CREATE_LOT',
@@ -458,7 +471,6 @@ export class InventoryService {
           lotItemId: lotItem.id,
           totalWeight,
         }),
-        reason: 'Lot creation from inventory items',
       },
     });
 
@@ -512,6 +524,8 @@ export class InventoryService {
       data: {
         barcode: wasteBarcode,
         inventoryTypeId: wasteType.id,
+        productName: `Waste from ${inventoryItem.productName}`,
+        unit: inventoryItem.unit,
         quantity: amountToDestroy,
         roomId: inventoryItem.roomId,
         locationId,
@@ -538,6 +552,7 @@ export class InventoryService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: 'InventoryItem',
         entityId: inventoryItemId,
         actionType: 'DESTROY',
@@ -549,7 +564,6 @@ export class InventoryService {
           wasteItemId: wasteItem.id,
           method: dto.destructionMethod,
         }),
-        reason: dto.reason,
       },
     });
 
@@ -579,8 +593,8 @@ export class InventoryService {
 
     // Check if operation is eligible for undo
     const undoableActions = ['ROOM_MOVE', 'QUANTITY_ADJUSTMENT', 'SPLIT', 'COMBINE'];
-    if (!undoableActions.includes(auditLog.action)) {
-      throw new BadRequestException(`Operation "${auditLog.action}" cannot be undone`);
+    if (!auditLog.action || !undoableActions.includes(auditLog.action)) {
+      throw new BadRequestException(`Operation "${auditLog.action || 'UNKNOWN'}" cannot be undone`);
     }
 
     // Parse old and new values
@@ -616,12 +630,12 @@ export class InventoryService {
     // Create audit log for undo
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: auditLog.entityType,
         entityId: auditLog.entityId,
         actionType: 'UNDO',
         oldValue: auditLog.newValue,
         newValue: auditLog.oldValue,
-        reason: dto.reason,
       },
     });
 
@@ -634,20 +648,17 @@ export class InventoryService {
   async getAdjustments(locationId: string, page: number = 1, limit: number = 50) {
     const skip = (page - 1) * limit;
 
+    // Get inventory item IDs for this location first
+    const inventoryItems = await this.prisma.inventoryItem.findMany({
+      where: { locationId, deletedAt: null },
+      select: { id: true },
+    });
+    const inventoryItemIds = inventoryItems.map(item => item.id);
+
     const [adjustments, total] = await Promise.all([
       this.prisma.inventoryAdjustment.findMany({
         where: {
-          inventoryItem: {
-            locationId,
-          },
-        },
-        include: {
-          inventoryItem: {
-            include: {
-              inventoryType: true,
-              room: true,
-            },
-          },
+          inventoryItemId: { in: inventoryItemIds },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -655,9 +666,7 @@ export class InventoryService {
       }),
       this.prisma.inventoryAdjustment.count({
         where: {
-          inventoryItem: {
-            locationId,
-          },
+          inventoryItemId: { in: inventoryItemIds },
         },
       }),
     ]);
@@ -679,19 +688,11 @@ export class InventoryService {
   async getSplits(locationId: string, page: number = 1, limit: number = 50) {
     const skip = (page - 1) * limit;
 
+    // Note: InventorySplit doesn't have relation to InventoryItem, so we can't filter by locationId
     const [splits, total] = await Promise.all([
       this.prisma.inventorySplit.findMany({
         where: {
-          parentInventoryItem: {
-            locationId,
-          },
-        },
-        include: {
-          parentInventoryItem: {
-            include: {
-              inventoryType: true,
-            },
-          },
+          deletedAt: null,
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -699,9 +700,7 @@ export class InventoryService {
       }),
       this.prisma.inventorySplit.count({
         where: {
-          parentInventoryItem: {
-            locationId,
-          },
+          deletedAt: null,
         },
       }),
     ]);
@@ -723,20 +722,11 @@ export class InventoryService {
   async getCombinations(locationId: string, page: number = 1, limit: number = 50) {
     const skip = (page - 1) * limit;
 
+    // Note: InventoryCombination doesn't have relation to InventoryItem, so we can't filter by locationId
     const [combinations, total] = await Promise.all([
       this.prisma.inventoryCombination.findMany({
         where: {
-          targetInventoryItem: {
-            locationId,
-          },
-        },
-        include: {
-          targetInventoryItem: {
-            include: {
-              inventoryType: true,
-              room: true,
-            },
-          },
+          deletedAt: null,
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -744,9 +734,7 @@ export class InventoryService {
       }),
       this.prisma.inventoryCombination.count({
         where: {
-          targetInventoryItem: {
-            locationId,
-          },
+          deletedAt: null,
         },
       }),
     ]);

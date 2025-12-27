@@ -88,28 +88,41 @@ export class TransferService {
         manifestNumber,
         senderLocationId: locationId,
         receiverLocationId: dto.receiverLocationId,
-        driverId: dto.driverId,
-        vehicleId: dto.vehicleId,
+        userId: 'system', // TODO: Get from auth context
         status: TransferStatus.PENDING,
         estimatedArrival: new Date(dto.estimatedArrival),
         notes: dto.notes,
-        items: {
+        transferItems: {
           create: dto.items.map((item) => ({
             inventoryItemId: item.inventoryItemId,
             quantity: item.quantity,
           })),
         },
+        ...(dto.driverId && {
+          transferDrivers: {
+            create: {
+              driverId: dto.driverId,
+            },
+          },
+        }),
+        ...(dto.vehicleId && {
+          transferVehicles: {
+            create: {
+              vehicleId: dto.vehicleId,
+            },
+          },
+        }),
       },
       include: {
-        items: {
+        transferItems: {
           include: {
             inventoryItem: true,
           },
         },
-        driver: true,
-        vehicle: true,
-        sourceLocation: true,
-        destinationLocation: true,
+        transferDrivers: { include: { driver: true } },
+        transferVehicles: { include: { vehicle: true } },
+        senderLocation: true,
+        receiverLocation: true,
       },
     });
 
@@ -128,6 +141,7 @@ export class TransferService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: 'Transfer',
         entityType: 'Transfer',
         entityId: transfer.id,
         actionType: 'CREATE',
@@ -162,15 +176,15 @@ export class TransferService {
       this.prisma.transfer.findMany({
         where,
         include: {
-          items: {
+          transferItems: {
             include: {
               inventoryItem: true,
             },
           },
-          driver: true,
-          vehicle: true,
-          sourceLocation: true,
-          destinationLocation: true,
+          transferDrivers: { include: { driver: true } },
+          transferVehicles: { include: { vehicle: true } },
+          senderLocation: true,
+          receiverLocation: true,
         },
         skip: (page - 1) * limit,
         take: limit,
@@ -197,14 +211,14 @@ export class TransferService {
         status: TransferStatus.PENDING,
       },
       include: {
-        items: {
+        transferItems: {
           include: {
             inventoryItem: true,
           },
         },
-        driver: true,
-        vehicle: true,
-        sourceLocation: true,
+        transferDrivers: { include: { driver: true } },
+        transferVehicles: { include: { vehicle: true } },
+        senderLocation: true,
       },
       orderBy: { estimatedArrival: 'asc' },
     });
@@ -226,14 +240,14 @@ export class TransferService {
         },
       },
       include: {
-        items: {
+        transferItems: {
           include: {
             inventoryItem: true,
           },
         },
-        driver: true,
-        vehicle: true,
-        sourceLocation: true,
+        transferDrivers: { include: { driver: true } },
+        transferVehicles: { include: { vehicle: true } },
+        senderLocation: true,
       },
       orderBy: { estimatedArrival: 'asc' },
     });
@@ -245,15 +259,15 @@ export class TransferService {
     const transfer = await this.prisma.transfer.findUnique({
       where: { id: transferId },
       include: {
-        items: {
+        transferItems: {
           include: {
             inventoryItem: true,
           },
         },
-        driver: true,
-        vehicle: true,
-        sourceLocation: true,
-        destinationLocation: true,
+        transferDrivers: { include: { driver: true } },
+        transferVehicles: { include: { vehicle: true } },
+        senderLocation: true,
+        receiverLocation: true,
       },
     });
 
@@ -280,7 +294,7 @@ export class TransferService {
     const transfer = await this.prisma.transfer.findUnique({
       where: { id: transferId },
       include: {
-        items: {
+        transferItems: {
           include: {
             inventoryItem: true,
           },
@@ -306,12 +320,14 @@ export class TransferService {
 
     if (dto.status === 'RECEIVED') {
       // Create inventory items at destination location
-      for (const item of transfer.items) {
+      for (const item of transfer.transferItems) {
         await this.prisma.inventoryItem.create({
           data: {
             locationId: locationId,
             inventoryTypeId: item.inventoryItem.inventoryTypeId,
             strainId: item.inventoryItem.strainId,
+            productName: item.inventoryItem.productName,
+            unit: item.inventoryItem.unit,
             quantity: item.quantity,
             roomId: item.inventoryItem.roomId, // Should be mapped to destination room
             barcode: `${item.inventoryItem.barcode}-TRF-${Date.now()}`,
@@ -320,7 +336,7 @@ export class TransferService {
       }
     } else if (dto.status === 'REJECTED') {
       // Return items to source location inventory
-      for (const item of transfer.items) {
+      for (const item of transfer.transferItems) {
         await this.prisma.inventoryItem.update({
           where: { id: item.inventoryItemId },
           data: {
@@ -341,23 +357,25 @@ export class TransferService {
         receivedAt: dto.status === 'RECEIVED' ? new Date() : null,
       },
       include: {
-        items: {
+        transferItems: {
           include: {
             inventoryItem: true,
           },
         },
-        driver: true,
-        vehicle: true,
-        sourceLocation: true,
-        destinationLocation: true,
+        transferDrivers: { include: { driver: true } },
+        transferVehicles: { include: { vehicle: true } },
+        senderLocation: true,
+        receiverLocation: true,
       },
     });
 
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: 'Transfer',
         entityType: 'Transfer',
         entityId: transferId,
+        actionType: dto.status === 'RECEIVED' ? 'RECEIVE' : 'REJECT',
         action: dto.status === 'RECEIVED' ? 'RECEIVE' : 'REJECT',
         userId: 'system', // Should be from auth context
         changes: JSON.stringify({
@@ -404,6 +422,7 @@ export class TransferService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: 'Transfer',
         entityType: 'Driver',
         entityId: driver.id,
         actionType: 'CREATE',
@@ -463,6 +482,7 @@ export class TransferService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: 'Transfer',
         entityType: 'Vehicle',
         entityId: vehicle.id,
         actionType: 'CREATE',

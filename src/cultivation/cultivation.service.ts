@@ -307,8 +307,8 @@ export class CultivationService {
     // Audit log for update
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'plant',
         entityId: plantId,
         actionType: 'update',
@@ -332,8 +332,8 @@ export class CultivationService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'plant',
         entityId: plantId,
         actionType: 'delete',
@@ -375,8 +375,8 @@ export class CultivationService {
     // Audit
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'harvest',
         entityId: harvest.id,
         actionType: 'create',
@@ -728,8 +728,8 @@ export class CultivationService {
     // Audit log with before and after room states (IDs)
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: plantId ? 'plant' : 'inventoryItem',
         entityId: plantId ?? (inventoryItemId as string),
         actionType: 'room_move',
@@ -762,8 +762,8 @@ export class CultivationService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'room',
         entityId: room.id,
         actionType: 'create',
@@ -815,8 +815,8 @@ export class CultivationService {
     // Audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'plant',
         entityId: plantId,
         actionType: 'convert_to_mother',
@@ -865,7 +865,7 @@ export class CultivationService {
     const cloneInventory = await this.prisma.inventoryItem.create({
       data: {
         locationId,
-        inventoryType: { connect: { id: 'clone' } }, // Assuming 'clone' is a valid inventory type ID
+        inventoryTypeId: 'clone', // Assuming 'clone' is a valid inventory type ID
         inventoryTypeName: 'Clone',
         productName: `Clones from Mother ${motherPlant.strain}`,
         quantity: data.quantity,
@@ -891,8 +891,8 @@ export class CultivationService {
     // Audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'plant',
         entityId: motherPlantId,
         actionType: 'generate_clones',
@@ -948,7 +948,7 @@ export class CultivationService {
     const seedInventory = await this.prisma.inventoryItem.create({
       data: {
         locationId,
-        inventoryType: { connect: { id: 'seed' } }, // Assuming 'seed' is a valid inventory type ID
+        inventoryTypeId: 'seed', // Assuming 'seed' is a valid inventory type ID
         inventoryTypeName: 'Seed',
         productName: `Seeds from Mother ${motherPlant.strain}`,
         quantity: data.quantity,
@@ -973,8 +973,8 @@ export class CultivationService {
     // Audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
-        module: 'cultivation',
         entityType: 'plant',
         entityId: motherPlantId,
         actionType: 'generate_seeds',
@@ -1054,8 +1054,8 @@ export class CultivationService {
     // Create audit log for the undo operation
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
-        module: auditLog.module,
         entityType: auditLog.entityType,
         entityId: auditLog.entityId,
         actionType: 'undo',
@@ -1134,5 +1134,10 @@ export class CultivationService {
     const left = randomInt(0, 100_000_000).toString().padStart(8, '0');
     const right = randomInt(0, 100_000_000).toString().padStart(8, '0');
     return `${left}${right}`;
+  }
+
+  private generateBarcode(): string {
+    // Generate a 16-digit barcode (alias for generate16DigitBarcode)
+    return this.generate16DigitBarcode();
   }
 }

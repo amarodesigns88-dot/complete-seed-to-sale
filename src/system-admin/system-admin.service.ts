@@ -36,6 +36,7 @@ export class SystemAdminService {
     // For now, we'll create an audit log entry
     await this.prisma.auditLog.create({
       data: {
+        module: "System-admin",
         userId: adminUserId,
         actionType: 'UPDATE_SYSTEM_CONFIG',
         entityType: 'SystemConfig',
@@ -70,9 +71,9 @@ export class SystemAdminService {
         select: {
           id: true,
           email: true,
-          firstName: true,
-          lastName: true,
-          userType: true,
+          name: true,
+          
+          
           isActive: true,
           createdAt: true,
           lastLoginAt: true,
@@ -136,8 +137,8 @@ export class SystemAdminService {
           user: {
             select: {
               email: true,
-              firstName: true,
-              lastName: true,
+              name: true,
+              
             },
           },
         },
@@ -212,6 +213,7 @@ export class SystemAdminService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "System-admin",
         userId: adminUserId,
         actionType: 'TRIGGER_BACKUP',
         entityType: 'System',
@@ -255,7 +257,7 @@ export class SystemAdminService {
       data: logs.map(log => ({
         id: log.id,
         type: log.action,
-        message: `${log.action} on ${log.entity}`,
+        message: `${log.action} on ${log.entityType}`,
         read: false,
         createdAt: log.createdAt,
       })),
@@ -274,6 +276,7 @@ export class SystemAdminService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "System-admin",
         userId: adminUserId,
         actionType: 'CLEAR_CACHE',
         entityType: 'System',
