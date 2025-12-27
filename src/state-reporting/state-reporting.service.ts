@@ -93,6 +93,7 @@ export class StateReportingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_COMPLIANCE_REPORT',
         entityType: 'REPORT',
         entityId: '',
@@ -184,6 +185,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_MARKET_ANALYTICS_REPORT',
         entityType: 'REPORT',
         entityId: '',
@@ -264,6 +266,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_LICENSEE_PERFORMANCE_REPORT',
         entityType: 'REPORT',
         entityId: dto.licenseeUbi || '',
@@ -351,6 +354,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_INVENTORY_REPORT',
         entityType: 'REPORT',
         entityId: '',
@@ -437,6 +441,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_SALES_ANALYTICS_REPORT',
         entityType: 'REPORT',
         entityId: '',
@@ -530,6 +535,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_TRANSFER_REPORT',
         entityType: 'REPORT',
         entityId: '',
@@ -630,6 +636,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_TESTING_COMPLIANCE_REPORT',
         entityType: 'REPORT',
         entityId: '',
@@ -700,6 +707,7 @@ export class StateReportingService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "State-reporting",
         actionType: 'GENERATE_CUSTOM_REPORT',
         entityType: 'REPORT',
         entityId: '',

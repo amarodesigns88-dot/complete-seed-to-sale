@@ -60,6 +60,7 @@ export class StateUserManagementService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "State-user-management",
         actionType: 'CREATE_STATE_USER',
         entityType: 'User',
         entityId: user.id,
@@ -221,6 +222,7 @@ export class StateUserManagementService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "State-user-management",
         actionType: 'UPDATE_STATE_USER',
         entityType: 'User',
         entityId: userId,
@@ -257,6 +259,7 @@ export class StateUserManagementService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "State-user-management",
         actionType: 'DELETE_STATE_USER',
         entityType: 'User',
         entityId: userId,
@@ -304,6 +307,7 @@ export class StateUserManagementService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "State-user-management",
         actionType: 'SET_STATE_USER_PERMISSIONS',
         entityType: 'User',
         entityId: userId,

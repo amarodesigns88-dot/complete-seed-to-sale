@@ -59,6 +59,7 @@ export class InventoryService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: 'InventoryItem',
         entityId: inventoryItemId,
         actionType: 'ROOM_MOVE',
@@ -127,6 +128,7 @@ export class InventoryService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: 'InventoryItem',
         entityId: inventoryItemId,
         actionType: 'QUANTITY_ADJUSTMENT',
@@ -222,6 +224,7 @@ export class InventoryService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: 'InventoryItem',
         entityId: inventoryItemId,
         actionType: 'SPLIT',
@@ -343,6 +346,7 @@ export class InventoryService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: 'InventoryItem',
         entityId: combinedItem.id,
         actionType: 'COMBINE',
@@ -446,6 +450,7 @@ export class InventoryService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: 'Lot',
         entityId: lot.id,
         actionType: 'CREATE_LOT',
@@ -538,6 +543,7 @@ export class InventoryService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: 'InventoryItem',
         entityId: inventoryItemId,
         actionType: 'DESTROY',
@@ -616,6 +622,7 @@ export class InventoryService {
     // Create audit log for undo
     await this.prisma.auditLog.create({
       data: {
+        module: "Inventory",
         entityType: auditLog.entityType,
         entityId: auditLog.entityId,
         actionType: 'UNDO',

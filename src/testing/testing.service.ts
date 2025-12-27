@@ -49,6 +49,7 @@ export class TestingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Testing",
         userId,
         actionType: 'SAMPLE_GENERATED',
         entityType: 'Sample',
@@ -99,6 +100,7 @@ export class TestingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Testing",
         userId,
         actionType: 'LAB_ASSIGNED',
         entityType: 'Sample',
@@ -145,6 +147,7 @@ export class TestingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Testing",
         userId,
         actionType: 'SAMPLE_REMEDIATION',
         entityType: 'Sample',

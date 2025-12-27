@@ -190,6 +190,7 @@ export class RoomService {
       try {
         await this.prisma.auditLog.create({
           data: {
+        module: "Cultivation",
             id: uuidv4(),
             userId: entry.userId,
             module: entry.module,

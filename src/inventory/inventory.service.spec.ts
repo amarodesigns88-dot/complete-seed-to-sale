@@ -536,6 +536,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       expect(prisma.inventoryItem.update).toHaveBeenCalledWith({
         where: { id: 'item-123' },
         data: { roomId: 'old-room' },
+        module: "Inventory",
       });
     });
 
@@ -570,6 +571,7 @@ describe('InventoryService - Sprints 3-4 Enhancements', () => {
       expect(prisma.inventoryItem.update).toHaveBeenCalledWith({
         where: { id: 'item-123' },
         data: { quantity: 1000 },
+        module: "Inventory",
       });
     });
 

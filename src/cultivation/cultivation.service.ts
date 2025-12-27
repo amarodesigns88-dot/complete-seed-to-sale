@@ -307,6 +307,7 @@ export class CultivationService {
     // Audit log for update
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
         module: 'cultivation',
         entityType: 'plant',
@@ -332,6 +333,7 @@ export class CultivationService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
         module: 'cultivation',
         entityType: 'plant',
@@ -375,6 +377,7 @@ export class CultivationService {
     // Audit
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
         module: 'cultivation',
         entityType: 'harvest',
@@ -728,6 +731,7 @@ export class CultivationService {
     // Audit log with before and after room states (IDs)
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
         module: 'cultivation',
         entityType: plantId ? 'plant' : 'inventoryItem',
@@ -762,6 +766,7 @@ export class CultivationService {
 
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
         module: 'cultivation',
         entityType: 'room',
@@ -815,6 +820,7 @@ export class CultivationService {
     // Audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
         module: 'cultivation',
         entityType: 'plant',
@@ -891,6 +897,7 @@ export class CultivationService {
     // Audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
         module: 'cultivation',
         entityType: 'plant',
@@ -973,6 +980,7 @@ export class CultivationService {
     // Audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
         module: 'cultivation',
         entityType: 'plant',
@@ -1054,6 +1062,7 @@ export class CultivationService {
     // Create audit log for the undo operation
     await this.prisma.auditLog.create({
       data: {
+        module: "Cultivation",
         userId: userId ?? null,
         module: auditLog.module,
         entityType: auditLog.entityType,

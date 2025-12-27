@@ -55,6 +55,7 @@ export class StateLicenseeManagementService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "State-licensee-management",
         userId: stateUserId,
         actionType: 'CREATE_LICENSEE_ACCOUNT',
         entityType: 'Location',
@@ -110,6 +111,7 @@ export class StateLicenseeManagementService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "State-licensee-management",
         userId: stateUserId,
         action: dto.isActive ? 'ACTIVATE_LICENSE' : 'DEACTIVATE_LICENSE',
         entityType: 'Location',
@@ -165,6 +167,7 @@ export class StateLicenseeManagementService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "State-licensee-management",
         userId: stateUserId,
         actionType: 'SET_INVENTORY_WINDOW',
         entityType: 'Location',
@@ -226,6 +229,7 @@ export class StateLicenseeManagementService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "State-licensee-management",
         userId: stateUserId,
         actionType: 'ASSIGN_LICENSE_TYPE',
         entityType: 'Location',

@@ -80,6 +80,7 @@ export class LicenseeReportingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Licensee-reporting",
         actionType: 'GENERATE_SALES_REPORT',
         userId,
         details: { startDate, endDate, locationId: dto.locationId },
@@ -167,6 +168,7 @@ export class LicenseeReportingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Licensee-reporting",
         actionType: 'GENERATE_INVENTORY_REPORT',
         userId,
         details: { locationId: dto.locationId, type: dto.type },
@@ -247,6 +249,7 @@ export class LicenseeReportingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Licensee-reporting",
         actionType: 'GENERATE_COMPLIANCE_REPORT',
         userId,
         details: { startDate, endDate, locationId: dto.locationId },
@@ -336,6 +339,7 @@ export class LicenseeReportingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Licensee-reporting",
         actionType: 'GENERATE_TRANSFER_REPORT',
         userId,
         details: { startDate, endDate, locationId: dto.locationId },
@@ -408,6 +412,7 @@ export class LicenseeReportingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Licensee-reporting",
         actionType: 'GENERATE_TESTING_REPORT',
         userId,
         details: { startDate, endDate, locationId: dto.locationId },
@@ -467,6 +472,7 @@ export class LicenseeReportingService {
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
+        module: "Licensee-reporting",
         actionType: 'GENERATE_FINANCIAL_REPORT',
         userId,
         details: { startDate, endDate, locationId: dto.locationId },

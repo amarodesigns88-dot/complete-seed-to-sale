@@ -99,6 +99,7 @@ export class LicenseeService {
     // Log to audit
     await this.prisma.auditLog.create({
       data: {
+        module: "Licensee",
         userId: 'system', // Should be from authenticated user context
         entityType: 'Location',
         entityId: locationId,

@@ -17,6 +17,7 @@ export class AuditService {
   }) {
     await this.prisma.auditLog.create({
       data: {
+        module: "Common",
         id: uuidv4(),
         userId: params.userId,
         module: params.module,

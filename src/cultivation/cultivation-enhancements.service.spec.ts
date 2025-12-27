@@ -72,6 +72,7 @@ describe('CultivationService - Sprints 3-4 Enhancements', () => {
       expect(prisma.plant.update).toHaveBeenCalledWith({
         where: { id: plantId },
         data: { isMother: true, status: 'mother' },
+        module: "Cultivation",
       });
       expect(prisma.auditLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -158,6 +159,7 @@ describe('CultivationService - Sprints 3-4 Enhancements', () => {
       expect(prisma.plant.update).toHaveBeenCalledWith({
         where: { id: motherPlantId },
         data: { cloneOffspringCount: { increment: 10 } },
+        module: "Cultivation",
       });
     });
 
@@ -246,6 +248,7 @@ describe('CultivationService - Sprints 3-4 Enhancements', () => {
       expect(prisma.plant.update).toHaveBeenCalledWith({
         where: { id: motherPlantId },
         data: { seedOffspringCount: { increment: 50 } },
+        module: "Cultivation",
       });
     });
 
@@ -299,6 +302,7 @@ describe('CultivationService - Sprints 3-4 Enhancements', () => {
       expect(prisma.plant.update).toHaveBeenCalledWith({
         where: { id: 'plant-123' },
         data: { roomId: 'old-room' },
+        module: "Cultivation",
       });
       expect(prisma.auditLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
