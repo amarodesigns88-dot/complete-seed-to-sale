@@ -35,7 +35,7 @@ export class StateUserManagementService {
         email: dto.email,
         password: hashedPassword,
         name: `${dto.firstName} ${dto.lastName}`,
-        userType: 'STATE',
+        
         status: 'active',
         metadata: {
           firstName: dto.firstName,
@@ -64,7 +64,7 @@ export class StateUserManagementService {
         actionType: 'CREATE_STATE_USER',
         entityType: 'User',
         entityId: user.id,
-        changes: { created: dto },
+        changes: JSON.stringify({ created: dto }),
         userId: user.id,
       },
     });
@@ -82,7 +82,7 @@ export class StateUserManagementService {
     const skip = (sanitizedPage - 1) * sanitizedPerPage;
 
     const where: Prisma.UserWhereInput = {
-      userType: 'STATE',
+      
       deletedAt: null,
     };
 
@@ -142,7 +142,7 @@ export class StateUserManagementService {
     const user = await this.prisma.user.findFirst({
       where: {
         id: userId,
-        userType: 'STATE',
+        
         deletedAt: null,
       },
       select: {
@@ -173,7 +173,7 @@ export class StateUserManagementService {
     const existingUser = await this.prisma.user.findFirst({
       where: {
         id: userId,
-        userType: 'STATE',
+        
         deletedAt: null,
       },
     });
@@ -226,7 +226,7 @@ export class StateUserManagementService {
         actionType: 'UPDATE_STATE_USER',
         entityType: 'User',
         entityId: userId,
-        changes: { updated: dto },
+        changes: JSON.stringify({ updated: dto }),
         userId: userId,
       },
     });
@@ -242,7 +242,7 @@ export class StateUserManagementService {
     const existingUser = await this.prisma.user.findFirst({
       where: {
         id: userId,
-        userType: 'STATE',
+        
         deletedAt: null,
       },
     });
@@ -263,7 +263,7 @@ export class StateUserManagementService {
         actionType: 'DELETE_STATE_USER',
         entityType: 'User',
         entityId: userId,
-        changes: { deleted: true },
+        changes: JSON.stringify({ deleted: true }),
         userId: userId,
       },
     });
@@ -279,7 +279,7 @@ export class StateUserManagementService {
     const existingUser = await this.prisma.user.findFirst({
       where: {
         id: userId,
-        userType: 'STATE',
+        
         deletedAt: null,
       },
     });
@@ -311,7 +311,7 @@ export class StateUserManagementService {
         actionType: 'SET_STATE_USER_PERMISSIONS',
         entityType: 'User',
         entityId: userId,
-        changes: { permissions: dto },
+        changes: JSON.stringify({ permissions: dto }),
         userId: userId,
       },
     });

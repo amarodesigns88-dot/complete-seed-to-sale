@@ -19,6 +19,7 @@ model User {
   status           String           @default("active")
   isActive         Boolean          @default(true)
   metadata         Json?            // optional metadata for user
+  lastLoginAt      DateTime?        // Track last login time
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -420,6 +421,7 @@ model AuditLog {
   oldValue   String?  // old value before change (JSON string)
   newValue   String?  // new value after change (JSON string)
   changes    String?  // detailed changes (JSON string)
+  ipAddress  String?  // IP address of the user making the change
   createdAt  DateTime @default(now())
 }
 
@@ -559,6 +561,9 @@ model Sample {
   voidedAt          DateTime?
   voidReason        String?
   remediationStatus String? // For failed tests - pending_state_approval, approved, rejected
+  sampleType        String? // Type of sample
+  labName           String? // Name of lab processing sample
+  remediationType   String? // Type of remediation if applicable
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?

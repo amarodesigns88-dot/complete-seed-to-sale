@@ -71,9 +71,9 @@ export class SystemAdminService {
         select: {
           id: true,
           email: true,
-          firstName: true,
-          lastName: true,
-          userType: true,
+          name: true,
+          
+          
           isActive: true,
           createdAt: true,
           lastLoginAt: true,
@@ -137,8 +137,8 @@ export class SystemAdminService {
           user: {
             select: {
               email: true,
-              firstName: true,
-              lastName: true,
+              name: true,
+              
             },
           },
         },
@@ -257,7 +257,7 @@ export class SystemAdminService {
       data: logs.map(log => ({
         id: log.id,
         type: log.action,
-        message: `${log.action} on ${log.entity}`,
+        message: `${log.action} on ${log.entityType}`,
         read: false,
         createdAt: log.createdAt,
       })),

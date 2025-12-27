@@ -88,7 +88,7 @@ export class TransferService {
         manifestNumber,
         senderLocationId: locationId,
         receiverLocationId: dto.receiverLocationId,
-        userId: dto.userId || 'system',
+        userId: 'system', // TODO: Get from auth context
         status: TransferStatus.PENDING,
         estimatedArrival: new Date(dto.estimatedArrival),
         notes: dto.notes,

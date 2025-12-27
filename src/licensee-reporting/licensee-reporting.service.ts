@@ -83,7 +83,7 @@ export class LicenseeReportingService {
         module: "Licensee-reporting",
         actionType: 'GENERATE_SALES_REPORT',
         userId,
-        details: { startDate, endDate, locationId: dto.locationId },
+        details: { startDate: startDate.toISOString(), endDate: endDate.toISOString(), locationId: dto.locationId },
       },
     });
 
@@ -252,7 +252,7 @@ export class LicenseeReportingService {
         module: "Licensee-reporting",
         actionType: 'GENERATE_COMPLIANCE_REPORT',
         userId,
-        details: { startDate, endDate, locationId: dto.locationId },
+        details: { startDate: startDate.toISOString(), endDate: endDate.toISOString(), locationId: dto.locationId },
       },
     });
 
@@ -342,7 +342,7 @@ export class LicenseeReportingService {
         module: "Licensee-reporting",
         actionType: 'GENERATE_TRANSFER_REPORT',
         userId,
-        details: { startDate, endDate, locationId: dto.locationId },
+        details: { startDate: startDate.toISOString(), endDate: endDate.toISOString(), locationId: dto.locationId },
       },
     });
 
@@ -364,7 +364,7 @@ export class LicenseeReportingService {
     const endDate = dto.endDate ? new Date(dto.endDate) : new Date();
 
     // Query testing samples
-    const samples = await this.prisma.testingSample.findMany({
+    const samples = await this.prisma.sample.findMany({
       where: {
         createdAt: {
           gte: startDate,
@@ -415,7 +415,7 @@ export class LicenseeReportingService {
         module: "Licensee-reporting",
         actionType: 'GENERATE_TESTING_REPORT',
         userId,
-        details: { startDate, endDate, locationId: dto.locationId },
+        details: { startDate: startDate.toISOString(), endDate: endDate.toISOString(), locationId: dto.locationId },
       },
     });
 
@@ -475,7 +475,7 @@ export class LicenseeReportingService {
         module: "Licensee-reporting",
         actionType: 'GENERATE_FINANCIAL_REPORT',
         userId,
-        details: { startDate, endDate, locationId: dto.locationId },
+        details: { startDate: startDate.toISOString(), endDate: endDate.toISOString(), locationId: dto.locationId },
       },
     });
 

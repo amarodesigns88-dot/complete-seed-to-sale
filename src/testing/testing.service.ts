@@ -211,13 +211,12 @@ export class TestingService {
             select: {
               id: true,
               barcode: true,
-              strain: true,
+              strainId: true,
             },
           },
           testResults: {
             select: {
               id: true,
-              testType: true,
               result: true,
             },
           },
