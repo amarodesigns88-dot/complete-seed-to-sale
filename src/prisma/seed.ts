@@ -12,12 +12,27 @@ function generate16DigitBarcode(): string {
 }
 
 async function main() {
+  console.log('🌱 Starting comprehensive seed data creation...\n');
+
   // Generate UUIDs for primary records
-  const locationId = uuidv4();
+  const adminUserId = uuidv4();
+  const stateAdminUserId = uuidv4();
+  const stateAuditorUserId = uuidv4();
+  const stateUserUserId = uuidv4();
+  const licenseeAdminUserId = uuidv4();
+  const licenseeManagerUserId = uuidv4();
+  const licenseeGrowerUserId = uuidv4();
+  const licenseeUserUserId = uuidv4();
+
+  // Location IDs for different license types
+  const cultivationLocationId = uuidv4();
+  const processingLocationId = uuidv4();
+  const dispensaryLocationId = uuidv4();
+  const testingLocationId = uuidv4();
+
+  // Other IDs
   const roomId = uuidv4();
   const plantId = uuidv4();
-  const userId = uuidv4();
-  const permId = uuidv4();
   const invCloneId = uuidv4();
   const invSeedId = uuidv4();
   const invMotherId = uuidv4();
@@ -54,24 +69,72 @@ async function main() {
   await prisma.user.deleteMany({ where: { id: { in: legacyIds.users } } }).catch(() => {});
   await prisma.location.deleteMany({ where: { id: { in: legacyIds.location } } }).catch(() => {});
 
-  // --- Create new UUID-based location (keep UBI field for login) ---
-  const parentLocation = await prisma.location.upsert({
-    where: { ubi: 'TESTUBI123' }, // use ubi for uniqueness/upsert
+  // --- Create locations with different license types ---
+  console.log('📍 Creating locations with various license types...');
+  
+  const cultivationLocation = await prisma.location.upsert({
+    where: { ubi: 'CULT-UBI-001' },
     update: { updatedAt: new Date() },
     create: {
-      id: locationId,
-      name: 'Test Parent Location',
-      ubi: 'TESTUBI123',
-      licenseNumber: null,
-      licenseType: 'licensee',
-      enabledModules: ['cultivation', 'inventory', 'pos'],
+      id: cultivationLocationId,
+      name: 'Green Valley Cultivation',
+      ubi: 'CULT-UBI-001',
+      licenseNumber: 'CULT-LIC-2024-001',
+      licenseType: 'cultivation',
+      enabledModules: ['cultivation', 'inventory', 'compliance', 'reporting'],
+      isActive: true,
     },
   });
 
-  // Hash password for test user
+  const processingLocation = await prisma.location.upsert({
+    where: { ubi: 'PROC-UBI-002' },
+    update: { updatedAt: new Date() },
+    create: {
+      id: processingLocationId,
+      name: 'Premium Processing Facility',
+      ubi: 'PROC-UBI-002',
+      licenseNumber: 'PROC-LIC-2024-002',
+      licenseType: 'processing',
+      enabledModules: ['processing', 'inventory', 'compliance', 'reporting'],
+      isActive: true,
+    },
+  });
+
+  const dispensaryLocation = await prisma.location.upsert({
+    where: { ubi: 'DISP-UBI-003' },
+    update: { updatedAt: new Date() },
+    create: {
+      id: dispensaryLocationId,
+      name: 'Wellness Dispensary',
+      ubi: 'DISP-UBI-003',
+      licenseNumber: 'DISP-LIC-2024-003',
+      licenseType: 'retail',
+      enabledModules: ['pos', 'inventory', 'compliance', 'reporting'],
+      isActive: true,
+    },
+  });
+
+  const testingLocation = await prisma.location.upsert({
+    where: { ubi: 'TEST-UBI-004' },
+    update: { updatedAt: new Date() },
+    create: {
+      id: testingLocationId,
+      name: 'QA Testing Laboratory',
+      ubi: 'TEST-UBI-004',
+      licenseNumber: 'TEST-LIC-2024-004',
+      licenseType: 'testing',
+      enabledModules: ['testing', 'compliance', 'reporting'],
+      isActive: true,
+    },
+  });
+
+  console.log('✅ Created 4 locations with different license types\n');
+
+  // Hash password for all test users (same password for easy testing)
   const passwordHash = await bcrypt.hash('TestPassword123!', 10);
 
   // Create roles following the naming convention
+  console.log('👥 Creating user roles...');
   const roles = [
     // Admin role
     { name: 'admin', description: 'System Administrator - Full access to everything' },
@@ -97,55 +160,216 @@ async function main() {
     });
     createdRoles[roleData.name] = role;
   }
+  console.log('✅ Created 8 user roles\n');
 
-  // Create or upsert user by email (keeps email uniqueness)
-  const user = await prisma.user.upsert({
-    where: { email: 'testuser@example.com' },
+  // Create users for each role type
+  console.log('👤 Creating test users for each role...');
+  
+  // 1. Admin User
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@example.com' },
     update: {
-      name: 'Test User',
+      name: 'System Administrator',
       updatedAt: new Date(),
-      parentLocationId: parentLocation.id,
+      parentLocationId: null, // Admin has no specific location
       isActive: true,
-      roles: { 
-        set: [{ id: createdRoles['licensee_admin'].id }]
-      },
+      roles: { set: [{ id: createdRoles['admin'].id }] },
     },
     create: {
-      id: userId,
-      name: 'Test User',
-      email: 'testuser@example.com',
+      id: adminUserId,
+      name: 'System Administrator',
+      email: 'admin@example.com',
       passwordHash,
-      parentLocationId: parentLocation.id,
+      parentLocationId: null,
       isActive: true,
-      roles: { 
-        connect: [{ id: createdRoles['licensee_admin'].id }]
-      },
+      roles: { connect: [{ id: createdRoles['admin'].id }] },
     },
   });
 
-  // Upsert a permission record for the test user (scoped to the parent location)
-  await prisma.userPermission.upsert({
-    where: { id: permId },
+  // 2. State Admin User
+  const stateAdminUser = await prisma.user.upsert({
+    where: { email: 'state.admin@example.com' },
     update: {
-      userId: user.id,
-      locationId: parentLocation.id,
-      modules: ['cultivation', 'inventory'],
+      name: 'State Admin',
       updatedAt: new Date(),
+      parentLocationId: null, // State users don't belong to a specific location
+      isActive: true,
+      roles: { set: [{ id: createdRoles['state_admin'].id }] },
     },
     create: {
-      id: permId,
-      userId: user.id,
-      locationId: parentLocation.id,
-      modules: ['cultivation', 'inventory'],
+      id: stateAdminUserId,
+      name: 'State Admin',
+      email: 'state.admin@example.com',
+      passwordHash,
+      parentLocationId: null,
+      isActive: true,
+      roles: { connect: [{ id: createdRoles['state_admin'].id }] },
     },
   });
+
+  // 3. State Auditor User
+  const stateAuditorUser = await prisma.user.upsert({
+    where: { email: 'state.auditor@example.com' },
+    update: {
+      name: 'State Auditor',
+      updatedAt: new Date(),
+      parentLocationId: null,
+      isActive: true,
+      roles: { set: [{ id: createdRoles['state_auditor'].id }] },
+    },
+    create: {
+      id: stateAuditorUserId,
+      name: 'State Auditor',
+      email: 'state.auditor@example.com',
+      passwordHash,
+      parentLocationId: null,
+      isActive: true,
+      roles: { connect: [{ id: createdRoles['state_auditor'].id }] },
+    },
+  });
+
+  // 4. State User
+  const stateUser = await prisma.user.upsert({
+    where: { email: 'state.user@example.com' },
+    update: {
+      name: 'State User',
+      updatedAt: new Date(),
+      parentLocationId: null,
+      isActive: true,
+      roles: { set: [{ id: createdRoles['state_user'].id }] },
+    },
+    create: {
+      id: stateUserUserId,
+      name: 'State User',
+      email: 'state.user@example.com',
+      passwordHash,
+      parentLocationId: null,
+      isActive: true,
+      roles: { connect: [{ id: createdRoles['state_user'].id }] },
+    },
+  });
+
+  // 5. Licensee Admin User (assigned to cultivation location)
+  const licenseeAdminUser = await prisma.user.upsert({
+    where: { email: 'licensee.admin@example.com' },
+    update: {
+      name: 'Licensee Admin',
+      updatedAt: new Date(),
+      parentLocationId: cultivationLocation.id,
+      isActive: true,
+      roles: { set: [{ id: createdRoles['licensee_admin'].id }] },
+    },
+    create: {
+      id: licenseeAdminUserId,
+      name: 'Licensee Admin',
+      email: 'licensee.admin@example.com',
+      passwordHash,
+      parentLocationId: cultivationLocation.id,
+      isActive: true,
+      roles: { connect: [{ id: createdRoles['licensee_admin'].id }] },
+    },
+  });
+
+  // 6. Licensee Manager User (assigned to processing location)
+  const licenseeManagerUser = await prisma.user.upsert({
+    where: { email: 'licensee.manager@example.com' },
+    update: {
+      name: 'Licensee Manager',
+      updatedAt: new Date(),
+      parentLocationId: processingLocation.id,
+      isActive: true,
+      roles: { set: [{ id: createdRoles['licensee_manager'].id }] },
+    },
+    create: {
+      id: licenseeManagerUserId,
+      name: 'Licensee Manager',
+      email: 'licensee.manager@example.com',
+      passwordHash,
+      parentLocationId: processingLocation.id,
+      isActive: true,
+      roles: { connect: [{ id: createdRoles['licensee_manager'].id }] },
+    },
+  });
+
+  // 7. Licensee Grower User (assigned to cultivation location)
+  const licenseeGrowerUser = await prisma.user.upsert({
+    where: { email: 'licensee.grower@example.com' },
+    update: {
+      name: 'Licensee Grower',
+      updatedAt: new Date(),
+      parentLocationId: cultivationLocation.id,
+      isActive: true,
+      roles: { set: [{ id: createdRoles['licensee_grower'].id }] },
+    },
+    create: {
+      id: licenseeGrowerUserId,
+      name: 'Licensee Grower',
+      email: 'licensee.grower@example.com',
+      passwordHash,
+      parentLocationId: cultivationLocation.id,
+      isActive: true,
+      roles: { connect: [{ id: createdRoles['licensee_grower'].id }] },
+    },
+  });
+
+  // 8. Licensee User (assigned to dispensary location)
+  const licenseeUser = await prisma.user.upsert({
+    where: { email: 'licensee.user@example.com' },
+    update: {
+      name: 'Licensee User',
+      updatedAt: new Date(),
+      parentLocationId: dispensaryLocation.id,
+      isActive: true,
+      roles: { set: [{ id: createdRoles['licensee_user'].id }] },
+    },
+    create: {
+      id: licenseeUserUserId,
+      name: 'Licensee User',
+      email: 'licensee.user@example.com',
+      passwordHash,
+      parentLocationId: dispensaryLocation.id,
+      isActive: true,
+      roles: { connect: [{ id: createdRoles['licensee_user'].id }] },
+    },
+  });
+
+  console.log('✅ Created 8 test users (one for each role)\n');
+
+  // Create permissions for licensee users
+  console.log('🔐 Creating user permissions...');
+  const permissionsToCreate = [
+    { userId: licenseeAdminUser.id, locationId: cultivationLocation.id, modules: ['cultivation', 'inventory', 'compliance', 'reporting'] },
+    { userId: licenseeManagerUser.id, locationId: processingLocation.id, modules: ['processing', 'inventory', 'compliance', 'reporting'] },
+    { userId: licenseeGrowerUser.id, locationId: cultivationLocation.id, modules: ['cultivation', 'inventory'] },
+    { userId: licenseeUser.id, locationId: dispensaryLocation.id, modules: ['pos', 'inventory'] },
+  ];
+
+  for (const perm of permissionsToCreate) {
+    await prisma.userPermission.upsert({
+      where: { id: uuidv4() },
+      update: {
+        userId: perm.userId,
+        locationId: perm.locationId,
+        modules: perm.modules,
+        updatedAt: new Date(),
+      },
+      create: {
+        id: uuidv4(),
+        userId: perm.userId,
+        locationId: perm.locationId,
+        modules: perm.modules,
+      },
+    });
+  }
+  console.log('✅ Created permissions for licensee users\n');
 
   // --- Upsert default InventoryType records (all units = "units") ---
+  console.log('📦 Creating inventory types...');
   const defaultTypes = [
     { name: 'clone', unit: 'units', isSource: true },
     { name: 'seed', unit: 'units', isSource: true },
     { name: 'mother_plant', unit: 'units', isSource: true },
-    { name: 'plant_tissue', unit: 'units', isSource: true }, // per your request plant_tissue also 'units'
+    { name: 'plant_tissue', unit: 'units', isSource: true },
   ];
 
   const typeMap: Record<string, string> = {};
@@ -168,8 +392,10 @@ async function main() {
     });
     typeMap[t.name] = it.id;
   }
+  console.log('✅ Created 4 inventory types\n');
 
   // Create inventory items (UUID ids) and link to InventoryType
+  console.log('📊 Creating sample inventory items...');
   const sourceInventoryItems = [
     {
       id: invCloneId,
@@ -226,30 +452,34 @@ for (const item of sourceInventoryItems) {
       productName: item.productName,
       unit: item.unit,
       barcode,
-      location: { connect: { id: parentLocation.id } },
+      location: { connect: { id: cultivationLocation.id } },
     },
   });
 }
+console.log('✅ Created 4 inventory items\n');
 
-  // Create a sample Room for the location (Vegetative)
+  // Create a sample Room for the cultivation location (Vegetative)
+  console.log('🏠 Creating sample room...');
  const room = await prisma.room.upsert({
   where: {
     locationId_name: {
-      locationId: parentLocation.id,
+      locationId: cultivationLocation.id,
       name: 'Vegetative',
     },
   },
   update: { updatedAt: new Date() },
   create: {
     id: roomId,
-    location: { connect: { id: parentLocation.id } },
+    location: { connect: { id: cultivationLocation.id } },
     name: 'Vegetative',
     roomType: 'cultivation',
     status: 'active',
   },
 });
+console.log('✅ Created vegetative room\n');
 
   // Create a sample plant that references the roomId and consumes one unit of the clone inventory
+  console.log('🌿 Creating sample plant...');
   const plantExists = await prisma.plant.findUnique({ where: { id: plantId } });
   if (!plantExists) {
     await prisma.$transaction(async (tx) => {
@@ -264,7 +494,7 @@ for (const item of sourceInventoryItems) {
         sourceInventoryIdForPlant = sourceInv.id;
         await tx.auditLog.create({
           data: {
-            userId: user.id,
+            userId: licenseeAdminUser.id,
             module: 'inventory',
             entityType: 'inventoryItem',
             entityId: sourceInv.id,
@@ -278,7 +508,7 @@ for (const item of sourceInventoryItems) {
       await tx.plant.create({
         data: {
           id: plantId,
-          locationId: parentLocation.id,
+          locationId: cultivationLocation.id,
           strain: 'Blue Dream',
           roomId: room.id,
           phase: 'vegetative',
@@ -290,7 +520,7 @@ for (const item of sourceInventoryItems) {
 
       await tx.auditLog.create({
         data: {
-          userId: user.id,
+          userId: licenseeAdminUser.id,
           module: 'cultivation',
           entityType: 'plant',
           entityId: plantId,
@@ -300,23 +530,68 @@ for (const item of sourceInventoryItems) {
       });
     });
   }
+  console.log('✅ Created Blue Dream plant\n');
 
-  // Provide a useful output with the generated UUIDs so you can paste them into Postman
+  // Provide a useful output with the generated UUIDs
   const seeded = await prisma.inventoryItem.findMany({
-    where: { locationId: parentLocation.id, id: { in: [invCloneId, invSeedId, invMotherId, invTissueId] } },
+    where: { locationId: cultivationLocation.id, id: { in: [invCloneId, invSeedId, invMotherId, invTissueId] } },
     select: { id: true, barcode: true, inventoryTypeId: true, inventoryTypeName: true, quantity: true },
   });
 
-  console.log('Seed data created:', {
-    parentLocationId: parentLocation.id,
-    parentLocationUbi: parentLocation.ubi,
-    userEmail: user.email,
-    userId: user.id,
-    permissionId: permId,
-    roomId: room.id,
-    plantId,
-    seededInventory: seeded,
-  });
+  console.log('\n' + '='.repeat(80));
+  console.log('🎉 SEED DATA CREATION COMPLETE!');
+  console.log('='.repeat(80) + '\n');
+
+  console.log('📍 LOCATIONS CREATED:');
+  console.log('  1. Cultivation: ' + cultivationLocation.name + ' (UBI: ' + cultivationLocation.ubi + ')');
+  console.log('  2. Processing: ' + processingLocation.name + ' (UBI: ' + processingLocation.ubi + ')');
+  console.log('  3. Dispensary: ' + dispensaryLocation.name + ' (UBI: ' + dispensaryLocation.ubi + ')');
+  console.log('  4. Testing Lab: ' + testingLocation.name + ' (UBI: ' + testingLocation.ubi + ')');
+  
+  console.log('\n👥 TEST USERS CREATED (Password for all: TestPassword123!):');
+  console.log('  1. Admin User:');
+  console.log('     Email: admin@example.com');
+  console.log('     Role: admin (Full system access)');
+  console.log('');
+  console.log('  2. State Admin:');
+  console.log('     Email: state.admin@example.com');
+  console.log('     Role: state_admin (State + Licensee module access)');
+  console.log('');
+  console.log('  3. State Auditor:');
+  console.log('     Email: state.auditor@example.com');
+  console.log('     Role: state_auditor (Compliance auditing)');
+  console.log('');
+  console.log('  4. State User:');
+  console.log('     Email: state.user@example.com');
+  console.log('     Role: state_user (General state access)');
+  console.log('');
+  console.log('  5. Licensee Admin:');
+  console.log('     Email: licensee.admin@example.com');
+  console.log('     Role: licensee_admin (Full location admin)');
+  console.log('     Location: ' + cultivationLocation.name);
+  console.log('');
+  console.log('  6. Licensee Manager:');
+  console.log('     Email: licensee.manager@example.com');
+  console.log('     Role: licensee_manager (Location management)');
+  console.log('     Location: ' + processingLocation.name);
+  console.log('');
+  console.log('  7. Licensee Grower:');
+  console.log('     Email: licensee.grower@example.com');
+  console.log('     Role: licensee_grower (Cultivation focus)');
+  console.log('     Location: ' + cultivationLocation.name);
+  console.log('');
+  console.log('  8. Licensee User:');
+  console.log('     Email: licensee.user@example.com');
+  console.log('     Role: licensee_user (Basic access)');
+  console.log('     Location: ' + dispensaryLocation.name);
+
+  console.log('\n📦 INVENTORY ITEMS: ' + seeded.length + ' items created');
+  console.log('🏠 ROOMS: 1 vegetative room created');
+  console.log('🌿 PLANTS: 1 Blue Dream plant created');
+
+  console.log('\n🚀 LOGIN AT: http://localhost:5173');
+  console.log('📚 API DOCS: http://localhost:3000/api-docs');
+  console.log('\n' + '='.repeat(80) + '\n');
 }
 
 main()
