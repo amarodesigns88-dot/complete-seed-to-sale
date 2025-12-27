@@ -110,10 +110,10 @@ async function main() {
 
   // --- Upsert default InventoryType records (all units = "units") ---
   const defaultTypes = [
-    { name: 'clone', unit: 'units', isSource: true },
-    { name: 'seed', unit: 'units', isSource: true },
-    { name: 'mother_plant', unit: 'units', isSource: true },
-    { name: 'plant_tissue', unit: 'units', isSource: true }, // per your request plant_tissue also 'units'
+    { name: 'clone', unit: 'units', isSource: true, category: 'Source' },
+    { name: 'seed', unit: 'units', isSource: true, category: 'Source' },
+    { name: 'mother_plant', unit: 'units', isSource: true, category: 'Source' },
+    { name: 'plant_tissue', unit: 'units', isSource: true, category: 'Source' }, // per your request plant_tissue also 'units'
   ];
 
   const typeMap: Record<string, string> = {};
@@ -123,6 +123,7 @@ async function main() {
       update: {
         unit: t.unit,
         isSource: t.isSource,
+        category: t.category,
         updatedAt: new Date(),
       },
       create: {
@@ -131,6 +132,7 @@ async function main() {
         description: `${t.name} (default)`,
         unit: t.unit,
         isSource: t.isSource,
+        category: t.category,
       },
     });
     typeMap[t.name] = it.id;
